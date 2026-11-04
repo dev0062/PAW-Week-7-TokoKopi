@@ -1,0 +1,472 @@
+<%#
+  ============================================================================
+  FILE: views/staf.ejs
+  ============================================================================
+  UI/UX Staf Dapur Khusus KDS (Kitchen Display System):
+  - Kartu Antrean Besar & Kontras Tinggi (Mudah dibaca dari jarak 1-2 meter sambil masak)
+  - Tombol Aksi Sentuh Ekstra Besar (1 Sentuhan Langsung Ubah Status / Kunci Habis)
+  - Notifikasi Suara Audio Beep (Web Audio API) Setiap Pesanan Baru Masuk
+  - Tab Cepat: [ Antrean Masak ] vs [ Cepat Habis / Stok ]
+%>
+<%- include('partials/header', { judulHalaman: 'Layar Dapur & Antrean Masak', halamanAktif, appConfig }) %>
+
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5 space-y-5">
+  
+  <!-- Alert Pembatasan Hak Akses Jika Ada -->
+  <% if (typeof pesanAksesDitolak !== 'undefined' && pesanAksesDitolak) { %>
+    <div role="alert" class="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs sm:text-sm text-amber-950 flex items-center justify-between gap-3 shadow-xs">
+      <span><strong>Pemberitahuan:</strong> <%= pesanAksesDitolak %></span>
+      <a href="/login?ganti=1" class="px-3.5 py-1.5 rounded-xl bg-stone-900 text-white text-xs font-semibold">
+        Masuk Akun Pemilik
+      </a>
+    </div>
+  <% } %>
+
+  <!-- Bar Atas Dapur: Status Petugas & Kontrol Cepat -->
+  <div class="bg-white rounded-2xl border border-stone-200/90 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="w-10 h-10 rounded-xl bg-stone-900 text-white flex items-center justify-center font-bold text-base">
+        🍳
+      </span>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-bold text-stone-900 leading-tight">
+            Layar Dapur &amp; Antrean Masak
+          </h1>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        </div>
+        <p class="text-xs text-stone-500 mt-0.5">
+          Petugas Aktif: <strong class="text-stone-800">Nazhat Hafidz Al Jauzi</strong> &middot; Urutan Waktu Masuk (FIFO)
+        </p>
+      </div>
+    </div>
+
+    <!-- Tab Pilihan: [ Antrean Masak (KDS) ] vs [ Kelola Stok / Kunci Habis ] -->
+    <div class="flex items-center gap-2">
+      <div class="grid grid-cols-2 gap-1 bg-stone-100 p-1 rounded-xl text-xs font-bold">
+        <button
+          type="button"
+          id="tab-kds-antrean"
+          class="py-2 px-3.5 rounded-lg transition-all cursor-pointer bg-white text-stone-900 shadow-xs"
+        >
+          Antrean (<span id="stat-antrean-aktif"><%= antreanAktif.length %></span>)
+        </button>
+        <button
+          type="button"
+          id="tab-kds-stok"
+          class="py-2 px-3.5 rounded-lg transition-all cursor-pointer text-stone-600 hover:text-stone-900"
+        >
+          Stok Bahan (<span id="stat-stok-kritis"><%= menuKritis.length %></span>)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifikasi Ringkas -->
+  <div
+    id="toast-staf"
+    class="hidden fixed top-20 right-5 z-50 bg-stone-900 text-white px-5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-semibold flex items-center gap-2"
+  ></div>
+
+  <!-- ========================================================================= -->
+  <!-- VIEW 1: ANTREAN DAPUR TIKET BESAR (MUDAH DILIHAT DARI JAUH SAMBIL MASAK) -->
+  <!-- ========================================================================= -->
+  <section id="panel-antrean-masak" class="space-y-4">
+    
+    <!-- Grid Tiket Pesanan Masak (Besar & Jelas) -->
+    <div id="kontainer-antrean-fifo" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      <% if (antreanAktif.length === 0) { %>
+        <div class="col-span-full py-16 text-center border-2 border-dashed border-stone-200 bg-white rounded-3xl text-stone-400">
+          <p class="text-base font-bold text-stone-600">Dapur Sedang Kosong</p>
+          <p class="text-xs text-stone-400 mt-1">Belum ada pesanan baru dari meja pelanggan.</p>
+        </div>
+      <% } %>
+
+      <% antreanAktif.forEach(function(pesanan, index) { %>
+        <% const sedangMasak = pesanan.status === 'Sedang Diproses'; %>
+        <article
+          class="bg-white rounded-3xl border-2 shadow-xs flex flex-col justify-between overflow-hidden transition-all <%= sedangMasak ? 'border-amber-500 ring-2 ring-amber-100' : 'border-stone-200' %>"
+          data-order-kode="<%= pesanan.nomorAntrean %>"
+        >
+          <!-- Bagian Atas: Nomor Meja & Nomor Antrean JUMBO -->
+          <div class="p-5 border-b border-stone-100 <%= sedangMasak ? 'bg-amber-50/50' : 'bg-stone-50/50' %>">
+            <div class="flex items-center justify-between">
+              <span class="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight">
+                MEJA <%= pesanan.nomorMeja %>
+              </span>
+              <span class="px-3 py-1 rounded-xl font-mono text-xs font-bold <%= sedangMasak ? 'bg-amber-200 text-amber-950' : 'bg-stone-200 text-stone-800' %>">
+                <%= pesanan.nomorAntrean %>
+              </span>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-stone-500 mt-2 font-medium">
+              <span>Pemesan: <strong><%= pesanan.namaPelanggan %></strong></span>
+              <span class="font-mono bg-white px-2 py-0.5 rounded border border-stone-200 text-stone-700">
+                <%= hitungWaktuTunggu(pesanan.waktuPesan) %>
+              </span>
+            </div>
+          </div>
+
+          <!-- Rincian Menu Pesanan Tulisan Tebal & Mudah Dibaca -->
+          <div class="p-5 flex-1 space-y-3">
+            <ul class="space-y-2.5">
+              <% pesanan.items.forEach(function(item) { %>
+                <li class="flex items-center justify-between gap-3 text-sm sm:text-base border-b border-dashed border-stone-100 pb-2">
+                  <span class="font-bold text-stone-900 leading-tight">
+                    <%= item.nama %>
+                  </span>
+                  <span class="text-lg font-extrabold text-stone-900 bg-stone-100 px-3 py-0.5 rounded-lg shrink-0">
+                    <%= item.qty %>x
+                  </span>
+                </li>
+              <% }); %>
+            </ul>
+
+            <!-- Catatan Khusus Dari Pelanggan -->
+            <% if (pesanan.catatan && pesanan.catatan !== '-') { %>
+              <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 mt-2">
+                <strong>Catatan Khusus:</strong> <%= pesanan.catatan %>
+              </div>
+            <% } %>
+          </div>
+
+          <!-- Tombol Aksi Sentuh Super Besar (Kitchen Friendly) -->
+          <div class="p-4 bg-stone-50 border-t border-stone-100 flex items-center gap-2">
+            <% if (pesanan.status === 'Menunggu Konfirmasi') { %>
+              <button
+                type="button"
+                data-aksi-status="Sedang Diproses"
+                data-kode="<%= pesanan.nomorAntrean %>"
+                class="flex-1 py-3.5 px-4 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>🔥 Mulai Masak</span>
+              </button>
+            <% } %>
+
+            <button
+              type="button"
+              data-aksi-status="Siap Diantar"
+              data-kode="<%= pesanan.nomorAntrean %>"
+              class="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>✅ Siap Diantar</span>
+            </button>
+          </div>
+        </article>
+      <% }); %>
+    </div>
+
+    <!-- Riwayat Selesai Ringkas di Bawah Antrean -->
+    <div class="bg-white rounded-3xl border border-stone-200/90 p-5 shadow-xs space-y-3">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+        <h3 class="text-sm font-bold text-stone-900">
+          Pesanan yang Baru Selesai Diantar
+        </h3>
+        <span id="badge-total-selesai" class="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg">
+          <%= riwayatSelesai.length %> Selesai
+        </span>
+      </div>
+
+      <div id="kontainer-riwayat-selesai" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+        <% riwayatSelesai.slice(0, 6).forEach(function(p) { %>
+          <div class="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-stone-900">Meja <%= p.nomorMeja %></span> &middot; <span class="font-mono text-stone-500"><%= p.nomorAntrean %></span>
+              <p class="text-[11px] text-stone-500 truncate max-w-xs mt-0.5">
+                <%= p.items.map(i => `${i.qty}x ${i.nama}`).join(', ') %>
+              </p>
+            </div>
+            <span class="text-emerald-700 font-bold text-[11px] bg-emerald-50 px-2 py-0.5 rounded">Selesai</span>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- VIEW 2: KONTROL STOK BAHAN BAKU & TOMBOL TOGGLE HABIS 1-KLIK CEPAT -->
+  <!-- ========================================================================= -->
+  <section id="panel-kelola-stok" class="hidden space-y-5">
+    <div class="bg-white rounded-3xl border border-stone-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-4">
+        <div>
+          <h2 class="text-lg font-bold text-stone-900">
+            Kendali Cepat Stok Bahan Baku Dapur
+          </h2>
+          <p class="text-xs text-stone-500 mt-0.5">
+            Tekan <strong>Tandai Habis</strong> dalam 1 sentuhan jika bahan baku mendadak habis saat jam ramai.
+          </p>
+        </div>
+      </div>
+
+      <!-- Grid Tombol Cepat Menu (Bukan tabel kaku, melainkan kartu praktis untuk staf) -->
+      <div id="grid-stok-staf" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% semuaMenu.forEach(function(item) { %>
+          <div
+            id="row-stok-<%= item.id %>"
+            class="p-4 rounded-2xl border transition-all flex flex-col justify-between <%= item.stok === 0 ? 'bg-red-50/50 border-red-200' : 'bg-stone-50 border-stone-200/90' %>"
+          >
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <span class="text-[11px] font-semibold text-stone-500"><%= item.kategori %></span>
+                <span
+                  id="status-pill-<%= item.id %>"
+                  class="font-mono text-xs font-bold px-2 py-0.5 rounded-md <%= item.stok === 0 ? 'bg-red-600 text-white' : (item.stokMenipis ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900') %>"
+                >
+                  <%= item.stok === 0 ? 'Habis (0)' : `Sisa ${item.stok}` %>
+                </span>
+              </div>
+              <h3 class="font-bold text-base text-stone-900 leading-snug">
+                <%= item.nama %>
+              </h3>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-stone-200/70 flex items-center justify-between gap-2">
+              <!-- Input Cepat Kuota Porsi -->
+              <div class="flex items-center gap-1.5">
+                <input
+                  id="input-stok-<%= item.id %>"
+                  type="number"
+                  min="0"
+                  max="500"
+                  value="<%= item.stok %>"
+                  class="w-16 px-2 py-1.5 font-bold text-xs bg-white border border-stone-300 rounded-lg text-center"
+                />
+                <button
+                  type="button"
+                  data-simpan-stok="<%= item.id %>"
+                  class="px-2.5 py-1.5 bg-stone-900 text-white text-xs font-semibold rounded-lg hover:bg-stone-800 cursor-pointer"
+                >
+                  Ubah
+                </button>
+              </div>
+
+              <!-- Tombol 1-Klik Tandai Habis / Pulihkan -->
+              <button
+                type="button"
+                id="btn-toggle-habis-<%= item.id %>"
+                data-toggle-habis="<%= item.id %>"
+                class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer <%= item.stok === 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white' %>"
+              >
+                <%= item.stok === 0 ? 'Aktifkan (15)' : 'Kunci Habis' %>
+              </button>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<%- include('partials/footer', { appConfig }) %>
+
+<script>
+  (function () {
+    'use strict';
+
+    const tabAntrean = document.getElementById('tab-kds-antrean');
+    const tabStok = document.getElementById('tab-kds-stok');
+    const panelAntrean = document.getElementById('panel-antrean-masak');
+    const panelStok = document.getElementById('panel-kelola-stok');
+
+    const toastEl = document.getElementById('toast-staf');
+    const kontainerAntrean = document.getElementById('kontainer-antrean-fifo');
+    const kontainerRiwayat = document.getElementById('kontainer-riwayat-selesai');
+    const gridStokStaf = document.getElementById('grid-stok-staf');
+    const statAntreanAktif = document.getElementById('stat-antrean-aktif');
+    const statStokKritis = document.getElementById('stat-stok-kritis');
+    const badgeTotalSelesai = document.getElementById('badge-total-selesai');
+
+    let jumlahAntreanTerakhir = Number('<%= antreanAktif.length %>') || 0;
+
+    // Tab Switcher Dapur
+    tabAntrean.addEventListener('click', () => {
+      tabAntrean.className = 'py-2 px-3.5 rounded-lg transition-all cursor-pointer bg-white text-stone-900 shadow-xs font-bold';
+      tabStok.className = 'py-2 px-3.5 rounded-lg transition-all cursor-pointer text-stone-600 hover:text-stone-900 font-bold';
+      panelAntrean.classList.remove('hidden');
+      panelStok.classList.add('hidden');
+    });
+
+    tabStok.addEventListener('click', () => {
+      tabStok.className = 'py-2 px-3.5 rounded-lg transition-all cursor-pointer bg-white text-stone-900 shadow-xs font-bold';
+      tabAntrean.className = 'py-2 px-3.5 rounded-lg transition-all cursor-pointer text-stone-600 hover:text-stone-900 font-bold';
+      panelStok.classList.remove('hidden');
+      panelAntrean.classList.add('hidden');
+    });
+
+    // Suara Beep Otomatis Saat Ada Pesanan Masuk (Web Audio API Ringkas)
+    function bunyikanNotifikasiDapur() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Nada tinggi jelas
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } catch (e) {}
+    }
+
+    let toastTimer;
+    function tampilkanToast(pesan) {
+      clearTimeout(toastTimer);
+      toastEl.textContent = pesan;
+      toastEl.classList.remove('hidden');
+      toastTimer = setTimeout(() => {
+        toastEl.classList.add('hidden');
+      }, 3000);
+    }
+
+    // Aksi Klik Status Dapur (Mulai Masak / Siap Diantar)
+    kontainerAntrean.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-aksi-status]');
+      if (!btn) return;
+
+      const kode = btn.getAttribute('data-kode');
+      const statusBaru = btn.getAttribute('data-aksi-status');
+
+      const res = await fetch(`/api/pesanan/${kode}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: statusBaru })
+      });
+      const data = await res.json();
+      if (data.sukses) {
+        tampilkanToast(data.pesan);
+        muatSinkronisasiDapur();
+      }
+    });
+
+    // Aksi Kendali Stok (Simpan Kuota / Toggle Habis 1-Klik)
+    gridStokStaf.addEventListener('click', async (e) => {
+      const btnSimpan = e.target.closest('[data-simpan-stok]');
+      const btnToggle = e.target.closest('[data-toggle-habis]');
+
+      if (btnSimpan) {
+        const menuId = btnSimpan.getAttribute('data-simpan-stok');
+        const inputEl = document.getElementById(`input-stok-${menuId}`);
+        const nilaiStok = Number(inputEl.value);
+
+        const res = await fetch(`/api/stok/${menuId}/kuota`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stok: nilaiStok })
+        });
+        const data = await res.json();
+        if (data.sukses) {
+          tampilkanToast(data.pesan);
+          muatSinkronisasiDapur();
+        }
+      }
+
+      if (btnToggle) {
+        const menuId = btnToggle.getAttribute('data-toggle-habis');
+        const res = await fetch(`/api/stok/${menuId}/toggle-habis`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.sukses) {
+          tampilkanToast(data.pesan);
+          muatSinkronisasiDapur();
+        }
+      }
+    });
+
+    async function muatSinkronisasiDapur() {
+      try {
+        const res = await fetch('/api/sinkronisasi', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (Array.isArray(data.antreanAktif)) {
+          // Bunyikan nada jika pesanan bertambah
+          if (data.antreanAktif.length > jumlahAntreanTerakhir) {
+            bunyikanNotifikasiDapur();
+            tampilkanToast(`🔔 Pesanan Baru Masuk untuk Meja ${data.antreanAktif[data.antreanAktif.length - 1].nomorMeja}!`);
+          }
+          jumlahAntreanTerakhir = data.antreanAktif.length;
+          statAntreanAktif.textContent = data.antreanAktif.length;
+          renderAntreanFIFO(data.antreanAktif);
+        }
+
+        if (Array.isArray(data.semuaMenu)) {
+          const kritis = data.semuaMenu.filter(m => m.stok <= 5).length;
+          statStokKritis.textContent = kritis;
+        }
+
+        if (Array.isArray(data.riwayatSelesai)) {
+          badgeTotalSelesai.textContent = `${data.riwayatSelesai.length} Selesai`;
+          renderRiwayatSelesai(data.riwayatSelesai);
+        }
+      } catch (err) {}
+    }
+
+    function renderAntreanFIFO(antrean) {
+      if (antrean.length === 0) {
+        kontainerAntrean.innerHTML = `
+          <div class="col-span-full py-16 text-center border-2 border-dashed border-stone-200 bg-white rounded-3xl text-stone-400">
+            <p class="text-base font-bold text-stone-600">Dapur Sedang Kosong</p>
+            <p class="text-xs text-stone-400 mt-1">Belum ada pesanan baru dari meja pelanggan.</p>
+          </div>
+        `;
+        return;
+      }
+
+      kontainerAntrean.innerHTML = antrean.map((pesanan) => {
+        const sedangMasak = pesanan.status === 'Sedang Diproses';
+        const listItems = pesanan.items.map(i => `
+          <li class="flex items-center justify-between gap-3 text-sm sm:text-base border-b border-dashed border-stone-100 pb-2">
+            <span class="font-bold text-stone-900 leading-tight">${i.nama}</span>
+            <span class="text-lg font-extrabold text-stone-900 bg-stone-100 px-3 py-0.5 rounded-lg shrink-0">${i.qty}x</span>
+          </li>
+        `).join('');
+
+        return `
+          <article class="bg-white rounded-3xl border-2 shadow-xs flex flex-col justify-between overflow-hidden transition-all ${sedangMasak ? 'border-amber-500 ring-2 ring-amber-100' : 'border-stone-200'}" data-order-kode="${pesanan.nomorAntrean}">
+            <div class="p-5 border-b border-stone-100 ${sedangMasak ? 'bg-amber-50/50' : 'bg-stone-50/50'}">
+              <div class="flex items-center justify-between">
+                <span class="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight">MEJA ${pesanan.nomorMeja}</span>
+                <span class="px-3 py-1 rounded-xl font-mono text-xs font-bold ${sedangMasak ? 'bg-amber-200 text-amber-950' : 'bg-stone-200 text-stone-800'}">${pesanan.nomorAntrean}</span>
+              </div>
+              <div class="flex items-center justify-between text-xs text-stone-500 mt-2 font-medium">
+                <span>Pemesan: <strong>${pesanan.namaPelanggan}</strong></span>
+                <span class="font-mono bg-white px-2 py-0.5 rounded border border-stone-200 text-stone-700">${pesanan.labelWaktuTunggu || 'Baru masuk'}</span>
+              </div>
+            </div>
+
+            <div class="p-5 flex-1 space-y-3">
+              <ul class="space-y-2.5">${listItems}</ul>
+              ${pesanan.catatan && pesanan.catatan !== '-' ? `<div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 mt-2"><strong>Catatan Khusus:</strong> ${pesanan.catatan}</div>` : ''}
+            </div>
+
+            <div class="p-4 bg-stone-50 border-t border-stone-100 flex items-center gap-2">
+              ${pesanan.status === 'Menunggu Konfirmasi' ? `<button type="button" data-aksi-status="Sedang Diproses" data-kode="${pesanan.nomorAntrean}" class="flex-1 py-3.5 px-4 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"><span>🔥 Mulai Masak</span></button>` : ''}
+              <button type="button" data-aksi-status="Siap Diantar" data-kode="${pesanan.nomorAntrean}" class="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"><span>✅ Siap Diantar</span></button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderRiwayatSelesai(riwayat) {
+      kontainerRiwayat.innerHTML = riwayat.slice(0, 6).map(p => `
+        <div class="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between text-xs">
+          <div>
+            <span class="font-bold text-stone-900">Meja ${p.nomorMeja}</span> &middot; <span class="font-mono text-stone-500">${p.nomorAntrean}</span>
+            <p class="text-[11px] text-stone-500 truncate max-w-xs mt-0.5">${p.items.map(i => `${i.qty}x ${i.nama}`).join(', ')}</p>
+          </div>
+          <span class="text-emerald-700 font-bold text-[11px] bg-emerald-50 px-2 py-0.5 rounded">Selesai</span>
+        </div>
+      `).join('');
+    }
+
+    setInterval(muatSinkronisasiDapur, 3000);
+  })();
+</script>
+</body>
+</html>

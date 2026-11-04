@@ -1,0 +1,30 @@
+<%#
+  ============================================================================
+  FILE: views/500.ejs
+  ============================================================================
+  Halaman penanganan kendala internal server (HTTP 500).
+  ============================================================================
+%>
+<%- include('partials/header', { judulHalaman: '500 Kendala Server', halamanAktif: '', appConfig }) %>
+
+<main class="flex-1 flex items-center justify-center px-4 py-16">
+  <div class="max-w-md w-full bg-white rounded-2xl border border-zinc-200 p-8 text-center shadow-2xs">
+    <span class="inline-block font-mono text-xs font-bold px-2.5 py-1 rounded bg-red-50 text-red-800 border border-red-200 mb-3">
+      HTTP 500
+    </span>
+    <h1 class="text-xl sm:text-2xl font-bold text-zinc-900 mb-2">
+      Gangguan Pemrosesan Server
+    </h1>
+    <p class="text-xs sm:text-sm text-zinc-600 leading-relaxed mb-6">
+      <%= pesanError %>
+    </p>
+    <a
+      href="/"
+      class="inline-flex px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-amber-800 text-white text-xs sm:text-sm font-semibold transition-colors"
+    >
+      Muat Ulang Halaman
+    </a>
+  </div>
+</main>
+
+<%- include('partials/footer', { appConfig }) %>

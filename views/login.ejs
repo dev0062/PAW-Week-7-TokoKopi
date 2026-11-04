@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pintu Masuk — <%= appConfig.appName %></title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-[#F6F5F2] text-stone-900 font-sans min-h-screen flex flex-col justify-between antialiased selection:bg-stone-900 selection:text-white">
+
+  <!-- Top Navbar Minimalis -->
+  <header class="py-5 px-6 sm:px-10">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="w-9 h-9 rounded-xl bg-stone-900 text-white flex items-center justify-center font-extrabold text-xs tracking-wider shadow-sm">
+          DT
+        </span>
+        <div>
+          <span class="font-extrabold text-base tracking-tight text-stone-900 block leading-tight">
+            <%= appConfig.appName %>
+          </span>
+          <span class="text-[11px] text-stone-500 font-medium block leading-none mt-0.5">
+            Dine-In &amp; Smart Kitchen System
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+          Sistem Online
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Kontainer Utama: Layout 2 Kolom Kreatif & Terpisah Jelas -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col justify-center">
+    
+    <div class="text-center max-w-xl mx-auto mb-8 sm:mb-10">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight">
+        Selamat Datang di <%= appConfig.appName %>
+      </h1>
+      <p class="text-xs sm:text-sm text-stone-600 mt-2">
+        Silakan pilih pintu masuk Anda: pesan langsung dari meja atau kelola operasional kedai.
+      </p>
+    </div>
+
+    <!-- Pilihan 2 Kartu Akses Utama (Pelanggan Meja VS Manajemen Kedai) -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-stretch">
+      
+      <!-- KARTU 1: PELANGGAN MEJA (Dine-In QR Order) -->
+      <div class="md:col-span-6 bg-white rounded-3xl border border-stone-200/80 p-6 sm:p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden group">
+        <div class="absolute -right-10 -bottom-10 w-36 h-36 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-colors"></div>
+
+        <div>
+          <!-- Header Kartu -->
+          <div class="flex items-start justify-between gap-3 mb-5">
+            <div class="w-12 h-12 rounded-2xl bg-amber-100/70 border border-amber-200 flex items-center justify-center text-amber-900">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+                <line x1="6" y1="1" x2="6" y2="4"></line>
+                <line x1="10" y1="1" x2="10" y2="4"></line>
+                <line x1="14" y1="1" x2="14" y2="4"></line>
+              </svg>
+            </div>
+            <span class="px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
+              Pengunjung / Tamu
+            </span>
+          </div>
+
+          <h2 class="text-lg sm:text-xl font-bold text-stone-900 leading-snug">
+            Masuk sebagai Pelanggan
+          </h2>
+          <p class="text-xs sm:text-sm text-stone-500 mt-1.5 leading-relaxed">
+            Duduk di meja, pilih hidangan favorit, dan pantau status pesanan langsung dari HP Anda.
+          </p>
+
+          <!-- Form Pelanggan -->
+          <form action="/auth/login-pelanggan" method="POST" class="mt-6 space-y-4">
+            <div>
+              <label for="pelanggan-nama" class="block text-xs font-bold text-stone-700 mb-1.5">
+                Nama Pemesan
+              </label>
+              <input
+                id="pelanggan-nama"
+                name="namaPelanggan"
+                type="text"
+                required
+                value="Evan Vijaya"
+                placeholder="Masukkan nama Anda"
+                class="w-full px-4 py-3 text-sm bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:outline-none focus:border-stone-900 transition-colors"
+              />
+            </div>
+
+            <div>
+              <label for="pelanggan-meja" class="block text-xs font-bold text-stone-700 mb-1.5">
+                Nomor Meja Anda
+              </label>
+              <div class="relative">
+                <select
+                  id="pelanggan-meja"
+                  name="nomorMeja"
+                  class="w-full px-4 py-3 text-sm font-semibold bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:outline-none focus:border-stone-900 transition-colors appearance-none pr-10"
+                >
+                  <% for (let i = 1; i <= appConfig.jumlahMeja; i++) { %>
+                    <% const kode = String(i).padStart(2, '0'); %>
+                    <option value="<%= kode %>" <%= kode === mejaParam ? 'selected' : '' %>>
+                      Meja <%= kode %> (Dine-In)
+                    </option>
+                  <% } %>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-stone-500">
+                  <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="w-full py-3.5 px-4 bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm rounded-xl transition-all shadow-sm active:scale-98 mt-2 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>Buka Menu &amp; Pesan</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between text-xs text-stone-400">
+          <span>Tanpa antre di kasir</span>
+          <span>Dilengkapi Asisten AI</span>
+        </div>
+      </div>
+
+      <!-- KARTU 2: MANAJEMEN KEDAI (Pemilik & Staf Dapur Terstruktur Rapi) -->
+      <div class="md:col-span-6 bg-white rounded-3xl border border-stone-200/80 p-6 sm:p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden">
+        
+        <div>
+          <!-- Header Kartu -->
+          <div class="flex items-start justify-between gap-3 mb-5">
+            <div class="w-12 h-12 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-800">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <span class="px-3 py-1 rounded-full text-[11px] font-bold bg-stone-100 text-stone-700 border border-stone-200">
+              Portal Internal
+            </span>
+          </div>
+
+          <h2 class="text-lg sm:text-xl font-bold text-stone-900 leading-snug">
+            Login Pemilik &amp; Staf
+          </h2>
+          <p class="text-xs sm:text-sm text-stone-500 mt-1.5 leading-relaxed">
+            Pilih peran Anda di bawah ini untuk mengakses antrean dapur atau laporan analitik kedai.
+          </p>
+
+          <!-- Toggle Sub-Peran yang Jelas & Interaktif: Pemilik vs Staf -->
+          <div class="grid grid-cols-2 gap-2 bg-stone-100 p-1.5 rounded-2xl mt-5 text-xs font-bold">
+            <button
+              type="button"
+              id="sub-tab-pemilik"
+              class="py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-white text-stone-900 shadow-xs"
+            >
+              <span>👔 Pemilik Kedai</span>
+            </button>
+            <button
+              type="button"
+              id="sub-tab-staf"
+              class="py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900"
+            >
+              <span>🍳 Staf Dapur</span>
+            </button>
+          </div>
+
+          <!-- Pesan Error Khusus Internal -->
+          <% if (pesanError && roleAwal !== 'pelanggan') { %>
+            <div class="mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 font-medium">
+              <%= pesanError %>
+            </div>
+          <% } %>
+
+          <!-- Form Login Internal -->
+          <form id="form-login-internal" action="/auth/login-internal" method="POST" class="mt-5 space-y-4">
+            <input type="hidden" id="internal-role-target" name="roleTarget" value="pemilik" />
+
+            <div>
+              <label for="internal-username" class="block text-xs font-bold text-stone-700 mb-1.5">
+                Username
+              </label>
+              <input
+                id="internal-username"
+                name="username"
+                type="text"
+                required
+                value="pemilik"
+                autocomplete="username"
+                placeholder="Masukkan username"
+                class="w-full px-4 py-3 text-sm bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:outline-none focus:border-stone-900 transition-colors"
+              />
+            </div>
+
+            <div>
+              <label for="internal-password" class="block text-xs font-bold text-stone-700 mb-1.5">
+                Kata Sandi
+              </label>
+              <input
+                id="internal-password"
+                name="password"
+                type="password"
+                required
+                value="password123"
+                autocomplete="current-password"
+                placeholder="Masukkan kata sandi"
+                class="w-full px-4 py-3 text-sm bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:outline-none focus:border-stone-900 transition-colors"
+              />
+            </div>
+
+            <button
+              type="submit"
+              id="btn-login-internal"
+              class="w-full py-3.5 px-4 bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm rounded-xl transition-all shadow-sm active:scale-98 mt-2 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span id="label-btn-internal">Masuk ke Dashboard Pemilik</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- Bantuan Pintasan Kredensial Nyata yang Elegan -->
+        <div class="mt-6 pt-4 border-t border-stone-100">
+          <div class="flex items-center justify-between text-xs text-stone-500 bg-stone-50 px-3.5 py-2.5 rounded-xl border border-stone-200/70">
+            <span>Kredensial Aktif:</span>
+            <span id="badge-kredensial-hint" class="font-mono font-bold text-stone-800">
+              user: pemilik &middot; pass: password123
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer Bersih -->
+  <footer class="py-5 text-center text-xs text-stone-500">
+    &copy; 2026 <%= appConfig.appName %> &middot; Dibuat oleh <%= appConfig.authorName %> (<%= appConfig.authorNim %>)
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const tabPemilik = document.getElementById('sub-tab-pemilik');
+      const tabStaf = document.getElementById('sub-tab-staf');
+      const inputUsername = document.getElementById('internal-username');
+      const inputPassword = document.getElementById('internal-password');
+      const internalRoleTarget = document.getElementById('internal-role-target');
+      const labelBtn = document.getElementById('label-btn-internal');
+      const badgeHint = document.getElementById('badge-kredensial-hint');
+
+      function setSubRole(role) {
+        if (role === 'pemilik') {
+          tabPemilik.className = 'py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-white text-stone-900 shadow-xs font-bold';
+          tabStaf.className = 'py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 font-bold';
+          internalRoleTarget.value = 'pemilik';
+          inputUsername.value = 'pemilik';
+          inputPassword.value = 'password123';
+          labelBtn.textContent = 'Masuk ke Dashboard Pemilik';
+          badgeHint.innerHTML = 'user: pemilik &middot; pass: password123';
+        } else {
+          tabStaf.className = 'py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-white text-stone-900 shadow-xs font-bold';
+          tabPemilik.className = 'py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 font-bold';
+          internalRoleTarget.value = 'staf';
+          inputUsername.value = 'staf';
+          inputPassword.value = 'password123';
+          labelBtn.textContent = 'Masuk ke Layar Antrean Dapur';
+          badgeHint.innerHTML = 'user: staf &middot; pass: password123';
+        }
+      }
+
+      tabPemilik.addEventListener('click', () => setSubRole('pemilik'));
+      tabStaf.addEventListener('click', () => setSubRole('staf'));
+    })();
+  </script>
+</body>
+</html>

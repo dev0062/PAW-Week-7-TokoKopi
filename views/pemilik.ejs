@@ -1,0 +1,281 @@
+<%#
+  ============================================================================
+  FILE: views/pemilik.ejs
+  ============================================================================
+  UI/UX Dashboard Eksekutif Pemilik (Dev Yuftiana Ayyun):
+  - Visual Analitik Modern & Elegan (Grafik Batang Proporsional + KPI Metrik Harian)
+  - Pantauan Real-Time Stok Kritis (Bahan Baku Menipis / Habis)
+  - Rekomendasi Belanja Bahan Baku Besok Berdasarkan Riwayat Chatbot
+  - Fitur Cetak (PDF) & Export Excel (CSV)
+%>
+<%- include('partials/header', { judulHalaman: 'Dashboard Eksekutif Pemilik', halamanAktif, appConfig }) %>
+
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+  <!-- Header Ringkasan Eksekutif -->
+  <div class="bg-white rounded-3xl border border-stone-200/90 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="px-3 py-1 rounded-full text-xs font-bold bg-stone-900 text-white">
+          Owner Analytics
+        </span>
+        <span class="text-xs text-stone-500 font-medium">Pemilik: <strong>Dev Yuftiana Ayyun</strong></span>
+      </div>
+      <h1 class="text-xl sm:text-2xl font-extrabold text-stone-900 tracking-tight mt-2">
+        Laporan Penjualan &amp; Sisa Bahan Baku
+      </h1>
+      <p class="text-xs sm:text-sm text-stone-500 mt-1">
+        Pantauan otomatis real-time dari seluruh transaksi meja &middot; Tanggal: <strong><%= tanggalLaporan %></strong>
+      </p>
+    </div>
+
+    <!-- Tombol Tindakan Export & Cetak -->
+    <div class="flex items-center gap-2.5">
+      <a
+        href="/api/laporan/export-csv"
+        class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-2"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Export Excel (CSV)</span>
+      </a>
+
+      <button
+        type="button"
+        onclick="window.print()"
+        class="px-4 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        <span>Cetak PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 4 Kartu Metrik Kinerja Harian -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Menu Terlaris -->
+    <div class="bg-white rounded-2xl border border-stone-200/90 p-5 shadow-xs">
+      <span class="text-xs font-semibold text-stone-500">Menu Paling Laku #1</span>
+      <p id="kpi-menu-terlaris" class="text-base font-extrabold text-stone-900 mt-2 truncate">
+        <%= ringkasan.menuTerlarisUtama ? ringkasan.menuTerlarisUtama.nama : '-' %>
+      </p>
+      <p id="kpi-menu-terlaris-porsi" class="text-xs font-bold text-emerald-700 mt-1">
+        <%= ringkasan.menuTerlarisUtama ? `${ringkasan.menuTerlarisUtama.terjualHariIni} porsi terjual` : '0 porsi' %>
+      </p>
+    </div>
+
+    <!-- Total Omzet Harian -->
+    <div class="bg-white rounded-2xl border border-stone-200/90 p-5 shadow-xs">
+      <span class="text-xs font-semibold text-stone-500">Total Omzet Penjualan</span>
+      <p id="kpi-total-omzet" class="text-xl font-extrabold text-stone-900 mt-1">
+        <%= formatRupiah(ringkasan.totalPendapatanHarian) %>
+      </p>
+      <p id="kpi-total-porsi" class="text-xs text-stone-500 mt-1">
+        Dari total <strong><%= ringkasan.totalPorsiTerjual %> porsi</strong> makanan &amp; minuman
+      </p>
+    </div>
+
+    <!-- Peringatan Stok Menipis -->
+    <div class="bg-white rounded-2xl border border-stone-200/90 p-5 shadow-xs">
+      <span class="text-xs font-semibold text-stone-500">Bahan Baku Menipis (&le; 5 Porsi)</span>
+      <p id="kpi-stok-kritis" class="text-xl font-extrabold text-red-600 mt-1">
+        <%= ringkasan.jumlahMenuKritis %> Menu Perlu Belanja
+      </p>
+      <p class="text-xs text-stone-500 mt-1">
+        Ambang batas aman dapur: 5 porsi
+      </p>
+    </div>
+
+    <!-- Dicari Saat Habis di Chatbot -->
+    <div class="bg-white rounded-2xl border border-stone-200/90 p-5 shadow-xs">
+      <span class="text-xs font-semibold text-stone-500">Dicari Pelanggan Saat Habis</span>
+      <p id="kpi-dicari-habis" class="text-xl font-extrabold text-amber-700 mt-1">
+        <%= ringkasan.totalPencarianMenuHabis %> Kali Ditanyakan
+      </p>
+      <p class="text-xs text-stone-500 mt-1">
+        Acuan penambahan belanja bahan baku
+      </p>
+    </div>
+  </div>
+
+  <!-- Grafik Batang Terlaris & Rekomendasi Tambah Belanja -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    
+    <!-- Kolom Kiri: Visual Grafik Peringkat Menu Terlaris -->
+    <div class="lg:col-span-7 bg-white rounded-3xl border border-stone-200/90 p-6 shadow-xs space-y-4">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+        <div>
+          <h2 class="text-base font-bold text-stone-900">
+            Grafik Menu Terlaris Hari Ini
+          </h2>
+          <p class="text-xs text-stone-500">
+            Diurutkan otomatis berdasarkan jumlah porsi yang terjual.
+          </p>
+        </div>
+        <span class="text-xs font-bold text-stone-600 bg-stone-100 px-2.5 py-1 rounded-lg">Real-Time</span>
+      </div>
+
+      <% const maksTerjual = Math.max(1, ...(peringkatMenu.map(m => m.terjualHariIni))); %>
+      <div id="kontainer-grafik-batang" class="space-y-3.5 pt-2">
+        <% peringkatMenu.slice(0, 7).forEach(function(item) { %>
+          <% const persenBar = Math.max(8, Math.round((item.terjualHariIni / maksTerjual) * 100)); %>
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-stone-800">
+                #<%= item.peringkat %> <%= item.nama %>
+              </span>
+              <span class="font-bold text-stone-900">
+                <%= item.terjualHariIni %> porsi &middot; <span class="text-stone-500 font-medium"><%= formatRupiah(item.omzetHariIni) %></span>
+              </span>
+            </div>
+            <div class="w-full h-3 bg-stone-100 rounded-full overflow-hidden">
+              <div
+                class="h-full rounded-full <%= item.peringkat <= 3 ? 'bg-stone-900' : 'bg-stone-500' %> transition-all duration-500"
+                style="width: <%= persenBar %>%"
+              ></div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+
+    <!-- Kolom Kanan: Rekomendasi Belanja Bahan Baku Besok -->
+    <div class="lg:col-span-5 bg-white rounded-3xl border border-stone-200/90 p-6 shadow-xs space-y-4">
+      <div class="border-b border-stone-100 pb-3">
+        <h2 class="text-base font-bold text-stone-900">
+          Rekomendasi Belanja Besok
+        </h2>
+        <p class="text-xs text-stone-500 mt-0.5">
+          Menu yang paling sering dicari pelanggan di Chatbot saat stoknya habis.
+        </p>
+      </div>
+
+      <div id="kontainer-riwayat-dicari-habis" class="space-y-3">
+        <% riwayatDicariHabis.slice(0, 4).forEach(function(item) { %>
+          <div class="p-3.5 rounded-2xl border <%= item.stok === 0 ? 'bg-red-50/50 border-red-200' : 'bg-stone-50 border-stone-200/80' %> flex items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-xs sm:text-sm text-stone-900"><%= item.nama %></span>
+                <% if (item.stok === 0) { %>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white">Habis</span>
+                <% } else if (item.stok <= 5) { %>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900">Sisa <%= item.stok %></span>
+                <% } %>
+              </div>
+              <p class="text-xs text-stone-500 mt-1">
+                Saran tambah belanja: <strong class="text-stone-800">+<%= Math.max(15, item.dicariSaatHabis * 3) %> porsi</strong>
+              </p>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="block text-base font-extrabold text-stone-900"><%= item.dicariSaatHabis %>x</span>
+              <span class="text-[10px] text-stone-400">ditanyakan</span>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tabel Rinci Sisa Stok & Penjualan -->
+  <div class="bg-white rounded-3xl border border-stone-200/90 p-6 shadow-xs space-y-4">
+    <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+      <div>
+        <h2 class="text-base font-bold text-stone-900">
+          Tabel Sisa Stok &amp; Penjualan Harian
+        </h2>
+        <p class="text-xs text-stone-500">
+          Stok berkurang otomatis setiap kali ada pesanan yang masuk dari meja pelanggan.
+        </p>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs sm:text-sm">
+        <thead>
+          <tr class="border-b border-stone-200 text-[11px] uppercase tracking-wider text-stone-500 bg-stone-50/70">
+            <th class="py-3 px-3 font-bold">Peringkat</th>
+            <th class="py-3 px-3 font-bold">Nama Menu</th>
+            <th class="py-3 px-3 font-bold text-right">Harga</th>
+            <th class="py-3 px-3 font-bold text-center">Stok Awal</th>
+            <th class="py-3 px-3 font-bold text-center">Terjual</th>
+            <th class="py-3 px-3 font-bold text-center">Sisa Stok</th>
+            <th class="py-3 px-3 font-bold text-center">Kondisi</th>
+            <th class="py-3 px-3 font-bold text-right">Omzet</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-laporan-pemilik" class="divide-y divide-stone-100">
+          <% peringkatMenu.forEach(function(item) { %>
+            <% const kritis = item.stok <= 5; %>
+            <tr class="hover:bg-stone-50/60 transition-colors">
+              <td class="py-3 px-3 font-bold text-stone-900">#<%= item.peringkat %></td>
+              <td class="py-3 px-3 font-bold text-stone-900"><%= item.nama %></td>
+              <td class="py-3 px-3 font-mono text-right"><%= formatRupiah(item.harga) %></td>
+              <td class="py-3 px-3 text-center text-stone-500"><%= item.stokAwal %> porsi</td>
+              <td class="py-3 px-3 font-bold text-center text-stone-900"><%= item.terjualHariIni %> porsi</td>
+              <td class="py-3 px-3 font-bold text-center <%= kritis ? 'text-red-600' : 'text-emerald-700' %>">
+                <%= item.stok %> porsi
+              </td>
+              <td class="py-3 px-3 text-center">
+                <% if (item.stok === 0) { %>
+                  <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-600 text-white">Habis</span>
+                <% } else if (kritis) { %>
+                  <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-900">Menipis</span>
+                <% } else { %>
+                  <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800">Aman</span>
+                <% } %>
+              </td>
+              <td class="py-3 px-3 font-bold text-right text-stone-900"><%= formatRupiah(item.omzetHariIni) %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<%- include('partials/footer', { appConfig }) %>
+
+<script>
+  (function () {
+    'use strict';
+
+    function formatRupiahClient(angka) {
+      return 'Rp ' + (Number(angka) || 0).toLocaleString('id-ID');
+    }
+
+    // Polling Real-Time Sinkronisasi Dashboard Pemilik
+    setInterval(async () => {
+      try {
+        const res = await fetch('/api/sinkronisasi', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const peringkat = data.peringkatMenu || [];
+        if (peringkat.length === 0) return;
+
+        const top1 = peringkat[0];
+        const totalPorsi = peringkat.reduce((s, i) => s + i.terjualHariIni, 0);
+        const totalOmzet = peringkat.reduce((s, i) => s + i.omzetHariIni, 0);
+        const jumlahKritis = peringkat.filter((i) => i.stok <= 5).length;
+        const totalDicari = peringkat.reduce((s, i) => s + i.dicariSaatHabis, 0);
+
+        document.getElementById('kpi-menu-terlaris').textContent = top1.nama;
+        document.getElementById('kpi-menu-terlaris-porsi').textContent = `${top1.terjualHariIni} porsi terjual`;
+        document.getElementById('kpi-total-omzet').textContent = formatRupiahClient(totalOmzet);
+        document.getElementById('kpi-total-porsi').innerHTML = `Dari total <strong>${totalPorsi} porsi</strong> makanan & minuman`;
+        document.getElementById('kpi-stok-kritis').textContent = `${jumlahKritis} Menu Perlu Belanja`;
+        document.getElementById('kpi-dicari-habis').textContent = `${totalDicari} Kali Ditanyakan`;
+      } catch (e) {}
+    }, 3000);
+  })();
+</script>
+</body>
+</html>

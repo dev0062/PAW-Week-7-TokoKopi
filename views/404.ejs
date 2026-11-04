@@ -1,0 +1,38 @@
+<%#
+  ============================================================================
+  FILE: views/404.ejs
+  ============================================================================
+  Halaman penanganan alamat URL tidak ditemukan (HTTP 404).
+  ============================================================================
+%>
+<%- include('partials/header', { judulHalaman: '404 Halaman Tidak Ditemukan', halamanAktif: '', appConfig }) %>
+
+<main class="flex-1 flex items-center justify-center px-4 py-16">
+  <div class="max-w-md w-full bg-white rounded-2xl border border-zinc-200 p-8 text-center shadow-2xs">
+    <span class="inline-block font-mono text-xs font-bold px-2.5 py-1 rounded bg-zinc-100 text-zinc-800 border border-zinc-200 mb-3">
+      HTTP 404
+    </span>
+    <h1 class="text-xl sm:text-2xl font-bold text-zinc-900 mb-2">
+      Halaman Tidak Ditemukan
+    </h1>
+    <p class="text-xs sm:text-sm text-zinc-600 leading-relaxed mb-6">
+      Alamat <code class="font-mono px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-800"><%= urlTidakDikenal %></code> tidak terdaftar pada sistem operasional <%= appConfig.appName %>.
+    </p>
+    <div class="flex flex-wrap items-center justify-center gap-2.5">
+      <a
+        href="/"
+        class="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-amber-800 text-white text-xs sm:text-sm font-semibold transition-colors"
+      >
+        Kembali ke Meja Pelanggan
+      </a>
+      <a
+        href="/staf"
+        class="px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs sm:text-sm font-semibold transition-colors"
+      >
+        Layar Staf Dapur
+      </a>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/footer', { appConfig }) %>

@@ -1,0 +1,30 @@
+<%#
+  ============================================================================
+  FILE: views/partials/footer.ejs
+  ============================================================================
+  Referensi PRD:
+  - Header PRD: Devtech v1.0 — Dev Alldino Zain (20240140260)
+  - Bagian 2 (Non-Goals) & Bagian 7 (Out of Scope):
+    Murni berbasis web untuk operasional makan di tempat (Dine-In),
+    pembayaran dilakukan langsung di kasir/QRIS meja setelah pesanan selesai.
+  ============================================================================
+%>
+  <footer class="mt-auto border-t border-zinc-200 bg-white py-6 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="font-semibold text-zinc-800"><%= appConfig.appName %> <%= appConfig.version %></span>
+        <span>&middot;</span>
+        <span>Sistem Pemesanan Mandiri Meja &amp; Manajemen Stok Dapur</span>
+        <span>&middot;</span>
+        <span class="font-mono text-zinc-700"><%= appConfig.authorName %> (<%= appConfig.authorNim %>)</span>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <span>Layanan Dine-In (Makan di Tempat)</span>
+        <span>&middot;</span>
+        <span>Jam Operasional: <%= appConfig.jamOperasional %></span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

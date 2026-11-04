@@ -1,0 +1,850 @@
+<%#
+  ============================================================================
+  FILE: views/pelanggan.ejs
+  ============================================================================
+  Layout Baru:
+  - Menu Grid 4 Kolom di Desktop (Melebar ke samping, tidak perlu scroll jauh)
+  - Keranjang Pesanan Meja Memanjang Penuh (Full-Width) di Bawah Kartu Menu
+  - Interaktif & Simple untuk Pengguna
+%>
+<%- include('partials/header', { judulHalaman: `Pemesanan Meja ${nomorMeja}`, halamanAktif, appConfig }) %>
+
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 pb-28 space-y-6">
+
+  <!-- Header Info Meja Ringkas -->
+  <div class="bg-white rounded-2xl border border-stone-200/90 p-4 shadow-xs flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <span class="w-10 h-10 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center justify-center shrink-0">
+        <%= nomorMeja %>
+      </span>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-sm sm:text-base font-bold text-stone-900 leading-tight">
+            Meja <%= nomorMeja %> &middot; <%= namaPelangganAktif %>
+          </h1>
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        </div>
+        <p class="text-xs text-stone-500 mt-0.5">
+          Sentuh <strong>+ Tambah</strong> pada menu pilihan Anda
+        </p>
+      </div>
+    </div>
+
+    <!-- Tombol Pintas Langsung Lompat ke Keranjang Bawah -->
+    <a
+      href="#section-keranjang-bawah"
+      id="btn-scroll-keranjang"
+      class="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+      </svg>
+      <span>Lihat Keranjang (<span id="badge-porsi-header">0</span>)</span>
+    </a>
+  </div>
+
+  <!-- SECTION 1: FILTER KATEGORI & PENCARIAN -->
+  <div class="bg-white rounded-2xl border border-stone-200/90 p-4 shadow-xs space-y-3">
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <!-- Input Cari -->
+      <div class="relative flex-1">
+        <input
+          id="input-cari-menu"
+          type="search"
+          placeholder="Cari makanan, kopi, camilan, atau rasa..."
+          class="w-full pl-9 pr-4 py-2 text-sm bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:outline-none focus:border-stone-900 transition-colors"
+        />
+        <svg class="w-4 h-4 text-stone-400 absolute left-3 top-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+      </div>
+
+      <!-- Kategori Chips Horizontal -->
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+        <button
+          type="button"
+          data-kategori="Semua"
+          class="btn-filter-kategori shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors bg-stone-900 text-white border-stone-900"
+        >
+          Semua Menu
+        </button>
+        <% kategoriList.forEach(function(kat) { %>
+          <button
+            type="button"
+            data-kategori="<%= kat %>"
+            class="btn-filter-kategori shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-colors bg-white text-stone-700 border-stone-200 hover:border-stone-900"
+          >
+            <%= kat %>
+          </button>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: GRID KARTU MENU MELEBAR KE SAMPING (3 SAMPAI 4 KOLOM DESKTOP) -->
+  <section aria-label="Daftar Katalog Menu" class="space-y-4">
+    <div id="grid-menu-pelanggan" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+      <% semuaMenu.forEach(function(item) { %>
+        <article
+          class="kartu-menu-item bg-white rounded-2xl border border-stone-200/90 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group <%= item.tersedia ? '' : 'opacity-70 bg-stone-50' %>"
+          data-id="<%= item.id %>"
+          data-nama="<%= item.nama.toLowerCase() %>"
+          data-kategori="<%= item.kategori %>"
+          data-stok="<%= item.stok %>"
+        >
+          <!-- Gambar Menu -->
+          <div class="relative h-44 w-full bg-stone-100 overflow-hidden">
+            <img
+              src="<%= item.gambar %>"
+              alt="<%= item.nama %>"
+              loading="lazy"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'"
+            />
+            <span class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-xs text-white text-[11px] font-medium">
+              <%= item.kategori %>
+            </span>
+
+            <!-- Badge Status Stok -->
+            <span
+              id="badge-stok-menu-<%= item.id %>"
+              class="absolute top-2.5 right-2.5 text-[11px] font-bold px-2.5 py-1 rounded-lg border shadow-xs <%= item.stok === 0 ? 'bg-red-600 text-white border-red-700' : (item.stokMenipis ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-white text-stone-800 border-stone-200') %>"
+            >
+              <% if (item.stok === 0) { %>
+                Habis
+              <% } else if (item.stokMenipis) { %>
+                Sisa <%= item.stok %>
+              <% } else { %>
+                Tersedia
+              <% } %>
+            </span>
+          </div>
+
+          <!-- Konten Menu -->
+          <div class="p-4 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="font-bold text-base text-stone-900 leading-snug">
+                <%= item.nama %>
+              </h3>
+              <p class="text-xs text-stone-500 mt-1 leading-relaxed line-clamp-2">
+                <%= item.deskripsi %>
+              </p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+              <span class="font-bold text-base text-stone-900">
+                <%= formatRupiah(item.harga) %>
+              </span>
+
+              <% if (item.tersedia) { %>
+                <button
+                  type="button"
+                  data-action="tambah-item"
+                  data-id="<%= item.id %>"
+                  data-nama="<%= item.nama %>"
+                  data-harga="<%= item.harga %>"
+                  data-stok="<%= item.stok %>"
+                  data-gambar="<%= item.gambar %>"
+                  class="px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                >
+                  + Tambah
+                </button>
+              <% } else { %>
+                <button
+                  type="button"
+                  data-action="tanya-pengganti"
+                  data-nama="<%= item.nama %>"
+                  class="px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-800 border border-red-200 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Tanya Pengganti
+                </button>
+              <% } %>
+            </div>
+          </div>
+        </article>
+      <% }); %>
+    </div>
+  </section>
+
+  <!-- SECTION 3: KERANJANG PESANAN MELEBAR PANJANG (FULL-WIDTH) DI BAWAH KARTU MENU -->
+  <section id="section-keranjang-bawah" aria-labelledby="heading-keranjang-meja" class="pt-2">
+    <div class="bg-white rounded-3xl border border-stone-200/90 p-5 sm:p-7 shadow-sm space-y-6">
+      
+      <!-- Header Keranjang Panjang -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h2 id="heading-keranjang-meja" class="text-lg sm:text-xl font-bold text-stone-900">
+              Keranjang Pesanan Meja <%= nomorMeja %>
+            </h2>
+            <span id="badge-jumlah-porsi" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-stone-100 text-stone-800 border border-stone-200">
+              0 Porsi
+            </span>
+          </div>
+          <p class="text-xs text-stone-500 mt-1">
+            Menu yang Anda tambahkan terkumpul di sini. Periksa dan kirim langsung ke antrean dapur.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-medium text-stone-500">Estimasi Pembayaran:</span>
+          <span id="total-harga-pesanan" class="text-xl sm:text-2xl font-extrabold text-stone-900">
+            Rp 0
+          </span>
+        </div>
+      </div>
+
+      <!-- Grid Daftar Menu Terpilih (Responsif 1 Kolom di HP, 2 sampai 3 Kolom di Tablet/Desktop) -->
+      <div>
+        <div id="daftar-item-pesanan" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div id="teks-pesanan-kosong" class="col-span-full py-10 text-center border-2 border-dashed border-stone-200 rounded-2xl text-xs text-stone-400">
+            <svg class="w-8 h-8 mx-auto mb-2 text-stone-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            Keranjang masih kosong. Pilih menu di atas untuk mulai memesan makanan &amp; minuman.
+          </div>
+        </div>
+      </div>
+
+      <!-- Baris Catatan Dapur & Tombol Kirim Pesanan -->
+      <div class="pt-4 border-t border-stone-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <!-- Input Catatan -->
+        <div class="flex-1 max-w-xl">
+          <label for="input-catatan-dapur" class="block text-xs font-bold text-stone-700 mb-1.5">
+            Catatan Dapur (Opsional)
+          </label>
+          <input
+            id="input-catatan-dapur"
+            type="text"
+            placeholder="Contoh: Es sedikit, tidak pakai pedas, saus dipisah..."
+            class="w-full px-4 py-2.5 text-xs sm:text-sm bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:outline-none focus:border-stone-900 transition-colors"
+          />
+        </div>
+
+        <!-- Tombol Aksi Kirim -->
+        <div class="flex items-center gap-3">
+          <button
+            id="btn-kirim-pesanan"
+            type="button"
+            disabled
+            class="w-full md:w-auto px-8 py-3 bg-stone-900 hover:bg-stone-800 disabled:bg-stone-200 disabled:text-stone-400 text-white font-bold text-sm rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <span>Kirim Pesanan ke Dapur</span>
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Riwayat Antrean Pesanan Meja Ini -->
+      <div id="panel-status-antrean" class="<%= pesananMejaIni.length > 0 ? '' : 'hidden' %> pt-4 border-t border-stone-100 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-stone-500">
+            Riwayat Antrean Dapur Meja <%= nomorMeja %>
+          </span>
+          <span class="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-0.5 rounded-full">
+            Live Update
+          </span>
+        </div>
+        <div id="kontainer-kartu-antrean" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <% pesananMejaIni.forEach(function(p) { %>
+            <div
+              class="rounded-2xl border border-stone-200 bg-stone-50 p-3.5 text-xs space-y-1.5"
+              data-antrean="<%= p.nomorAntrean %>"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-stone-900"><%= p.nomorAntrean %></span>
+                <span class="status-badge font-semibold px-2.5 py-0.5 rounded-md <%= p.status === 'Siap Diantar' ? 'bg-emerald-100 text-emerald-900' : (p.status === 'Sedang Diproses' ? 'bg-amber-100 text-amber-900' : 'bg-stone-200 text-stone-800') %>">
+                  <%= p.status %>
+                </span>
+              </div>
+              <p class="text-stone-600 text-[11px] leading-relaxed"><%= p.notifikasiTerbaru %></p>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- FLOATING ACTION BUTTON (FAB) TANYA ASISTEN AI (POJOK KANAN BAWAH) -->
+<div class="fixed bottom-5 right-5 z-40">
+  <button
+    type="button"
+    id="fab-buka-ai"
+    class="flex items-center gap-2.5 px-4 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-full shadow-lg hover:shadow-xl transition-all cursor-pointer group active:scale-95"
+    aria-label="Tanya Asisten AI"
+  >
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+    <span class="text-xs sm:text-sm font-semibold">Tanya Menu &amp; Stok</span>
+  </button>
+</div>
+
+<!-- MODAL POP-UP ASISTEN AI -->
+<div
+  id="modal-asisten-ai"
+  class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
+>
+  <div class="w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-2xl border border-stone-200 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[600px] h-full sm:h-[550px]">
+    
+    <!-- Header Modal -->
+    <div class="bg-stone-900 text-white px-4 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="w-7 h-7 rounded-lg bg-amber-700 text-white flex items-center justify-center font-bold text-xs">
+          AI
+        </span>
+        <div>
+          <h2 class="text-sm font-bold leading-none">
+            Asisten Meja <%= nomorMeja %>
+          </h2>
+          <p class="text-[11px] text-stone-300 mt-1 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span>Tersambung ke Stok Dapur &middot; Siap Membantu</span>
+          </p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        id="btn-tutup-ai"
+        class="w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center text-lg font-bold cursor-pointer"
+      >
+        &times;
+      </button>
+    </div>
+
+    <!-- Area Percakapan -->
+    <div
+      id="chat-messages"
+      class="flex-1 p-4 space-y-3 overflow-y-auto bg-stone-50 text-xs sm:text-sm"
+    >
+      <div class="flex items-start gap-2.5">
+        <span class="w-6 h-6 rounded-lg bg-stone-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+          DT
+        </span>
+        <div class="bg-white border border-stone-200 rounded-2xl rounded-tl-sm p-3.5 text-stone-800 shadow-xs max-w-[90%] space-y-1">
+          <p class="leading-relaxed">
+            Halo <strong><%= namaPelangganAktif %></strong>! Ada menu yang ingin Anda tanyakan atau butuh rekomendasi makanan paling laku hari ini?
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tombol Pertanyaan Cepat -->
+    <div class="px-3.5 py-2.5 bg-white border-t border-stone-200">
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+        <% quickReplies.forEach(function(qr) { %>
+          <button
+            type="button"
+            data-quick-msg="<%= qr.pesan %>"
+            class="btn-quick-reply shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors cursor-pointer"
+          >
+            <%= qr.label %>
+          </button>
+        <% }); %>
+      </div>
+    </div>
+
+    <!-- Form Input Chat -->
+    <form id="form-chat" class="p-3 bg-white border-t border-stone-200 flex items-center gap-2">
+      <input
+        id="input-chat"
+        type="text"
+        autocomplete="off"
+        placeholder="Ketik pertanyaan tentang menu atau stok..."
+        class="flex-1 px-3.5 py-2 text-xs sm:text-sm bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:outline-none focus:border-stone-900"
+      />
+      <button
+        type="submit"
+        class="px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-semibold transition-colors shrink-0 cursor-pointer"
+      >
+        Kirim
+      </button>
+    </form>
+
+  </div>
+</div>
+
+<%- include('partials/footer', { appConfig }) %>
+
+<script>
+  (function () {
+    'use strict';
+
+    // Elemen Asisten AI
+    const fabBukaAi = document.getElementById('fab-buka-ai');
+    const btnTutupAi = document.getElementById('btn-tutup-ai');
+    const modalAsistenAi = document.getElementById('modal-asisten-ai');
+    const chatMessages = document.getElementById('chat-messages');
+    const formChat = document.getElementById('form-chat');
+    const inputChat = document.getElementById('input-chat');
+
+    // Elemen Keranjang
+    const daftarItemEl = document.getElementById('daftar-item-pesanan');
+    const teksKosongEl = document.getElementById('teks-pesanan-kosong');
+    const badgeJumlahPorsi = document.getElementById('badge-jumlah-porsi');
+    const badgePorsiHeader = document.getElementById('badge-porsi-header');
+    const totalHargaEl = document.getElementById('total-harga-pesanan');
+    const btnKirimPesanan = document.getElementById('btn-kirim-pesanan');
+    const inputCatatanDapur = document.getElementById('input-catatan-dapur');
+
+    const panelStatusAntrean = document.getElementById('panel-status-antrean');
+    const kontainerKartuAntrean = document.getElementById('kontainer-kartu-antrean');
+    const inputCariMenu = document.getElementById('input-cari-menu');
+    const btnFilterKategoriList = document.querySelectorAll('.btn-filter-kategori');
+    const kartuMenuList = document.querySelectorAll('.kartu-menu-item');
+
+    const nomorMejaAktif = '<%= nomorMeja %>';
+    const namaPelangganAktif = '<%= namaPelangganAktif %>';
+    let kategoriAktif = 'Semua';
+    const keranjangMeja = new Map();
+    const statusAntreanTerakhir = new Map();
+
+    function bukaAsisten() {
+      modalAsistenAi.classList.remove('hidden');
+      setTimeout(() => inputChat.focus(), 100);
+    }
+    function tutupAsisten() {
+      modalAsistenAi.classList.add('hidden');
+    }
+
+    fabBukaAi.addEventListener('click', bukaAsisten);
+    btnTutupAi.addEventListener('click', tutupAsisten);
+    modalAsistenAi.addEventListener('click', (e) => {
+      if (e.target === modalAsistenAi) tutupAsisten();
+    });
+
+    document.querySelectorAll('[data-antrean]').forEach((el) => {
+      const kode = el.getAttribute('data-antrean');
+      const statusTeks = el.querySelector('.status-badge')?.textContent.trim() || '';
+      if (kode) statusAntreanTerakhir.set(kode, statusTeks);
+    });
+
+    function formatRupiahClient(angka) {
+      return 'Rp ' + (Number(angka) || 0).toLocaleString('id-ID');
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function formatBoldMarkdown(teks) {
+      const aman = escapeHtml(teks);
+      return aman.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    function tambahPesanChat({ pengirim, teksUtama, subTeks = '', rekomendasiMenu = [] }) {
+      const wrapper = document.createElement('div');
+
+      if (pengirim === 'pelanggan') {
+        wrapper.className = 'flex justify-end';
+        wrapper.innerHTML = `
+          <div class="bg-stone-900 text-white rounded-2xl rounded-tr-sm px-3.5 py-2 max-w-[85%] text-xs">
+            ${escapeHtml(teksUtama)}
+          </div>
+        `;
+      } else {
+        let htmlRekomendasi = '';
+        if (Array.isArray(rekomendasiMenu) && rekomendasiMenu.length > 0) {
+          const itemCards = rekomendasiMenu
+            .map(
+              (m) => `
+              <div class="flex items-center gap-2.5 p-2 rounded-xl bg-stone-50 border border-stone-200 hover:border-stone-300 transition-all">
+                ${m.gambar ? `
+                  <img
+                    src="${escapeHtml(m.gambar)}"
+                    alt="${escapeHtml(m.nama)}"
+                    class="w-12 h-12 rounded-lg object-cover shrink-0 border border-stone-200"
+                    loading="lazy"
+                  />
+                ` : `
+                  <div class="w-12 h-12 rounded-lg bg-stone-200 flex items-center justify-center shrink-0 text-stone-500 font-bold text-xs">
+                    ☕
+                  </div>
+                `}
+                <div class="min-w-0 flex-1">
+                  <p class="font-bold text-xs text-stone-900 truncate">${escapeHtml(m.nama)}</p>
+                  <p class="text-[11px] text-stone-600">
+                    ${formatRupiahClient(m.harga)} &middot; <span class="text-emerald-700 font-semibold">Stok ${m.stok}</span>
+                  </p>
+                  ${m.deskripsi ? `<p class="text-[10px] text-stone-400 line-clamp-1 truncate mt-0.5">${escapeHtml(m.deskripsi)}</p>` : ''}
+                </div>
+                <button
+                  type="button"
+                  data-chat-order-id="${m.id}"
+                  data-chat-order-nama="${escapeHtml(m.nama)}"
+                  data-chat-order-harga="${m.harga}"
+                  data-chat-order-stok="${m.stok}"
+                  class="shrink-0 px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-[11px] font-semibold transition-colors cursor-pointer shadow-xs"
+                >
+                  + Pesan
+                </button>
+              </div>
+            `
+            )
+            .join('');
+
+          htmlRekomendasi = `<div class="mt-2.5 space-y-2">${itemCards}</div>`;
+        }
+
+        wrapper.className = 'flex items-start gap-2.5';
+        wrapper.innerHTML = `
+          <span class="w-6 h-6 rounded-lg bg-stone-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+            DT
+          </span>
+          <div class="bg-white border border-stone-200 rounded-2xl rounded-tl-sm p-3 text-stone-800 shadow-xs max-w-[92%] space-y-1">
+            <p class="leading-relaxed text-xs">${formatBoldMarkdown(teksUtama)}</p>
+            ${subTeks ? `<p class="text-[11px] text-stone-500 leading-relaxed">${formatBoldMarkdown(subTeks)}</p>` : ''}
+            ${htmlRekomendasi}
+          </div>
+        `;
+      }
+
+      chatMessages.appendChild(wrapper);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function kirimPertanyaanKeChatbot(kalimat) {
+      const pesanBersih = String(kalimat || '').trim();
+      if (!pesanBersih) return;
+
+      tambahPesanChat({ pengirim: 'pelanggan', teksUtama: pesanBersih });
+      const antreanTerakhir = Array.from(statusAntreanTerakhir.keys()).pop() || '';
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pesan: pesanBersih,
+            nomorMeja: nomorMejaAktif,
+            nomorAntreanAktif: antreanTerakhir
+          })
+        });
+        const data = await res.json();
+
+        if (data.sukses) {
+          tambahPesanChat({
+            pengirim: 'asisten',
+            teksUtama: data.balasan,
+            subTeks: data.subTeks,
+            rekomendasiMenu: data.rekomendasiMenu
+          });
+        }
+      } catch (err) {
+        tambahPesanChat({
+          pengirim: 'asisten',
+          teksUtama: 'Maaf, koneksi ke asisten sedang terganggu.'
+        });
+      }
+    }
+
+    formChat.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nilai = inputChat.value;
+      inputChat.value = '';
+      kirimPertanyaanKeChatbot(nilai);
+    });
+
+    document.querySelectorAll('.btn-quick-reply').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        kirimPertanyaanKeChatbot(btn.getAttribute('data-quick-msg'));
+      });
+    });
+
+    function tambahMenuKePesanan({ id, nama, harga, stokMaks, gambar }) {
+      const numId = Number(id);
+      const itemLama = keranjangMeja.get(numId);
+      const qtySekarang = itemLama ? itemLama.qty : 0;
+
+      if (qtySekarang + 1 > Number(stokMaks)) {
+        bukaAsisten();
+        tambahPesanChat({
+          pengirim: 'asisten',
+          teksUtama: `Porsi **${nama}** sudah mencapai batas sisa stok dapur (${stokMaks} porsi).`
+        });
+        return;
+      }
+
+      keranjangMeja.set(numId, {
+        menuId: numId,
+        nama,
+        harga: Number(harga),
+        qty: qtySekarang + 1,
+        stokMaks: Number(stokMaks),
+        gambar: gambar || ''
+      });
+
+      renderKeranjangMeja();
+    }
+
+    function ubahQtyPesanan(menuId, delta) {
+      const item = keranjangMeja.get(Number(menuId));
+      if (!item) return;
+
+      const qtyBaru = item.qty + delta;
+      if (qtyBaru <= 0) {
+        keranjangMeja.delete(Number(menuId));
+      } else if (qtyBaru <= item.stokMaks) {
+        item.qty = qtyBaru;
+        keranjangMeja.set(Number(menuId), item);
+      }
+      renderKeranjangMeja();
+    }
+
+    function renderKeranjangMeja() {
+      const items = Array.from(keranjangMeja.values());
+
+      if (items.length === 0) {
+        daftarItemEl.innerHTML = '';
+        daftarItemEl.appendChild(teksKosongEl);
+        teksKosongEl.classList.remove('hidden');
+        badgeJumlahPorsi.textContent = '0 Porsi';
+        if (badgePorsiHeader) badgePorsiHeader.textContent = '0';
+        totalHargaEl.textContent = 'Rp 0';
+        btnKirimPesanan.disabled = true;
+        return;
+      }
+
+      teksKosongEl.classList.add('hidden');
+      let totalPorsi = 0;
+      let totalHarga = 0;
+
+      daftarItemEl.innerHTML = items
+        .map((item) => {
+          totalPorsi += item.qty;
+          totalHarga += item.qty * item.harga;
+          return `
+            <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-stone-50 border border-stone-200/90 text-xs shadow-2xs">
+              <div class="min-w-0">
+                <p class="font-bold text-stone-900 truncate text-xs sm:text-sm">${escapeHtml(item.nama)}</p>
+                <p class="text-stone-500 font-semibold mt-0.5">${formatRupiahClient(item.harga)} &middot; Total: ${formatRupiahClient(item.harga * item.qty)}</p>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  data-qty-id="${item.menuId}"
+                  data-qty-delta="-1"
+                  class="w-7 h-7 rounded-lg bg-white border border-stone-300 font-bold text-stone-700 hover:bg-stone-100 cursor-pointer active:scale-95 flex items-center justify-center text-sm shadow-2xs"
+                >-</button>
+                <span class="font-bold text-sm w-4 text-center">${item.qty}</span>
+                <button
+                  type="button"
+                  data-qty-id="${item.menuId}"
+                  data-qty-delta="1"
+                  class="w-7 h-7 rounded-lg bg-white border border-stone-300 font-bold text-stone-700 hover:bg-stone-100 cursor-pointer active:scale-95 flex items-center justify-center text-sm shadow-2xs"
+                >+</button>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+
+      badgeJumlahPorsi.textContent = `${totalPorsi} Porsi`;
+      if (badgePorsiHeader) badgePorsiHeader.textContent = totalPorsi;
+      totalHargaEl.textContent = formatRupiahClient(totalHarga);
+      btnKirimPesanan.disabled = false;
+    }
+
+    daftarItemEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-qty-id]');
+      if (!btn) return;
+      ubahQtyPesanan(btn.getAttribute('data-qty-id'), Number(btn.getAttribute('data-qty-delta')));
+    });
+
+    chatMessages.addEventListener('click', (e) => {
+      const btnOrder = e.target.closest('[data-chat-order-id]');
+      if (!btnOrder) return;
+      tambahMenuKePesanan({
+        id: btnOrder.getAttribute('data-chat-order-id'),
+        nama: btnOrder.getAttribute('data-chat-order-nama'),
+        harga: btnOrder.getAttribute('data-chat-order-harga'),
+        stokMaks: btnOrder.getAttribute('data-chat-order-stok')
+      });
+    });
+
+    document.getElementById('grid-menu-pelanggan').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const action = btn.getAttribute('data-action');
+
+      if (action === 'tambah-item') {
+        tambahMenuKePesanan({
+          id: btn.getAttribute('data-id'),
+          nama: btn.getAttribute('data-nama'),
+          harga: btn.getAttribute('data-harga'),
+          stokMaks: btn.getAttribute('data-stok'),
+          gambar: btn.getAttribute('data-gambar')
+        });
+      } else if (action === 'tanya-pengganti') {
+        bukaAsisten();
+        const namaMenu = btn.getAttribute('data-nama');
+        kirimPertanyaanKeChatbot(`Apakah ${namaMenu} masih ada? Minta rekomendasi penggantinya.`);
+      }
+    });
+
+    btnKirimPesanan.addEventListener('click', async () => {
+      const items = Array.from(keranjangMeja.values()).map((i) => ({
+        menuId: i.menuId,
+        qty: i.qty
+      }));
+      if (items.length === 0) return;
+
+      btnKirimPesanan.disabled = true;
+      btnKirimPesanan.textContent = 'Mengirim ke Dapur...';
+
+      try {
+        const res = await fetch('/api/pesanan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nomorMeja: nomorMejaAktif,
+            namaPelanggan: namaPelangganAktif,
+            items,
+            catatan: inputCatatanDapur.value.trim(),
+            sumberPesan: 'Pemesanan Meja'
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.sukses) {
+          bukaAsisten();
+          tambahPesanChat({
+            pengirim: 'asisten',
+            teksUtama: data.pesanError || 'Gagal memproses pesanan.',
+            subTeks: 'Berikut rekomendasi menu terlaris yang masih ada stoknya:',
+            rekomendasiMenu: data.rekomendasiPengganti || []
+          });
+        } else {
+          const p = data.pesanan;
+          keranjangMeja.clear();
+          inputCatatanDapur.value = '';
+          renderKeranjangMeja();
+
+          statusAntreanTerakhir.set(p.nomorAntrean, p.status);
+          tampilkanKartuAntreanBaru(p);
+
+          tambahPesanChat({
+            pengirim: 'asisten',
+            teksUtama: `Pesanan **${p.nomorAntrean}** berhasil dikirim ke dapur (${p.totalPorsi} porsi).`,
+            subTeks: 'Anda akan menerima pemberitahuan otomatis di sini saat makanan siap diantar.'
+          });
+        }
+      } catch (err) {
+        alert('Terjadi kesalahan jaringan.');
+      } finally {
+        btnKirimPesanan.textContent = 'Kirim Pesanan ke Dapur';
+        renderKeranjangMeja();
+      }
+    });
+
+    function tampilkanKartuAntreanBaru(p) {
+      panelStatusAntrean.classList.remove('hidden');
+      const ada = kontainerKartuAntrean.querySelector(`[data-antrean="${p.nomorAntrean}"]`);
+      const warnaBadge =
+        p.status === 'Siap Diantar'
+          ? 'bg-emerald-100 text-emerald-900'
+          : p.status === 'Sedang Diproses'
+          ? 'bg-amber-100 text-amber-900'
+          : 'bg-stone-200 text-stone-800';
+
+      const htmlKartu = `
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-stone-900">${escapeHtml(p.nomorAntrean)}</span>
+          <span class="status-badge font-semibold px-2 py-0.5 rounded-md ${warnaBadge}">
+            ${escapeHtml(p.status)}
+          </span>
+        </div>
+        <p class="text-stone-600 text-[11px] leading-relaxed">${escapeHtml(p.notifikasiTerbaru)}</p>
+      `;
+
+      if (ada) {
+        ada.innerHTML = htmlKartu;
+      } else {
+        const div = document.createElement('div');
+        div.className = 'rounded-2xl border border-stone-200 bg-stone-50 p-3.5 text-xs space-y-1.5';
+        div.setAttribute('data-antrean', p.nomorAntrean);
+        div.innerHTML = htmlKartu;
+        kontainerKartuAntrean.prepend(div);
+      }
+    }
+
+    function terapkanFilterKatalog() {
+      const q = inputCariMenu.value.trim().toLowerCase();
+
+      kartuMenuList.forEach((kartu) => {
+        const nama = kartu.getAttribute('data-nama') || '';
+        const kat = kartu.getAttribute('data-kategori') || '';
+
+        const cocokNama = q === '' || nama.includes(q);
+        const cocokKat = kategoriAktif === 'Semua' || kat === kategoriAktif;
+
+        if (cocokNama && cocokKat) {
+          kartu.classList.remove('hidden');
+        } else {
+          kartu.classList.add('hidden');
+        }
+      });
+    }
+
+    inputCariMenu.addEventListener('input', terapkanFilterKatalog);
+
+    btnFilterKategoriList.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        kategoriAktif = btn.getAttribute('data-kategori') || 'Semua';
+        btnFilterKategoriList.forEach((b) => {
+          const aktif = b.getAttribute('data-kategori') === kategoriAktif;
+          b.className = aktif
+            ? 'btn-filter-kategori shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors bg-stone-900 text-white border-stone-900'
+            : 'btn-filter-kategori shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-colors bg-white text-stone-700 border-stone-200 hover:border-stone-900';
+        });
+        terapkanFilterKatalog();
+      });
+    });
+
+    setInterval(async () => {
+      try {
+        const res = await fetch('/api/sinkronisasi', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const gabunganPesanan = [
+          ...(data.antreanAktif || []),
+          ...(data.riwayatSelesai || [])
+        ];
+
+        gabunganPesanan.forEach((p) => {
+          if (statusAntreanTerakhir.has(p.nomorAntrean)) {
+            const statusLama = statusAntreanTerakhir.get(p.nomorAntrean);
+            if (statusLama !== p.status) {
+              statusAntreanTerakhir.set(p.nomorAntrean, p.status);
+              tampilkanKartuAntreanBaru(p);
+
+              tambahPesanChat({
+                pengirim: 'asisten',
+                teksUtama: `Pembaruan Pesanan **${p.nomorAntrean}**: Status berubah menjadi **${p.status}**.`,
+                subTeks: p.notifikasiTerbaru
+              });
+            }
+          }
+        });
+      } catch (e) {}
+    }, 3000);
+  })();
+</script>
+</body>
+</html>

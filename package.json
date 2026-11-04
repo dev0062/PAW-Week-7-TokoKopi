@@ -1,0 +1,32 @@
+{
+  "name": "devtech-dinein-system",
+  "version": "1.0.0",
+  "description": "Devtech v1.0 - Sistem Pemesanan Mandiri Meja, Asisten Pelanggan & Manajemen Stok Dapur Real-Time (Dev Alldino Zain - 20240140260)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [
+    "devtech",
+    "dine-in",
+    "qr-table-ordering",
+    "kitchen-display-system",
+    "inventory-monitoring",
+    "mvc",
+    "express",
+    "ejs"
+  ],
+  "author": "Dev Alldino Zain (20240140260)",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@google/genai": "^2.32.0",
+    "dotenv": "^18.0.9",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
