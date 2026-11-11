@@ -2,21 +2,16 @@
  * ============================================================================
  * FILE: models/menuModel.js
  * ============================================================================
- * Referensi PRD:
- * - Problem Statement & Goal 1: Menyediakan informasi ketersediaan stok menu
- *   secara langsung dan akurat untuk mencegah pelanggan batal memesan di jam ramai.
- * - US-01-2: Menampilkan daftar menu yang stoknya > 0 secara akurat.
- * - US-01-3: Mendeteksi menu yang stoknya 0 (Habis) dan memberikan 3 rekomendasi
- *   menu paling laku yang stoknya masih tersedia.
- * - US-02-1 & F-04: Rekap otomatis peringkat menu paling laku berdasarkan porsi terjual.
- * - US-02-2 & F-04: Pemantauan sisa stok/bahan baku secara langsung (real-time).
- * - US-02-3 & F-05: Peringatan otomatis "Stok Menipis" jika sisa stok <= 5 porsi.
- * - US-02-4: Melacak riwayat menu yang paling sering dicari di Chatbot saat habis.
- * - US-03-1 & F-02: Mengubah status menu menjadi "Habis" dalam satu klik oleh staf.
- * - US-03-2 & F-02: Input kuota porsi stok awal oleh staf & pengurangan otomatis.
+ * Model Sequelize untuk Tabel `menus` di PostgreSQL (pgAdmin).
+ * Sesuai Ketentuan Praktikum:
+ * - Seluruh operasi CRUD (GET, POST, PUT, DELETE) melewati Model Sequelize
+ *   dan tersimpan di database PostgreSQL.
+ * - Controller tidak menulis query database secara langsung.
  * ============================================================================
  */
 
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 const appConfig = require('../config/appConfig');
 
 const KATEGORI_MENU = [
@@ -26,8 +21,83 @@ const KATEGORI_MENU = [
   'Kudapan & Pendamping'
 ];
 
-// Data operasional menu restoran/kafe Devtech dengan Foto Kuliner Berkualitas Tinggi (Unsplash Curated)
-const dataMenu = [
+// ============================================================================
+// 1. DEFINISI MODEL SEQUELIZE (`menus` table di PostgreSQL)
+// ============================================================================
+const Menu = sequelize.define(
+  'Menu',
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    kode: {
+      type: DataTypes.STRING(20),
+      allowNull: false
+    },
+    nama: {
+      type: DataTypes.STRING(150),
+      allowNull: false
+    },
+    kategori: {
+      type: DataTypes.STRING(80),
+      allowNull: false,
+      defaultValue: 'Hidangan Utama'
+    },
+    harga: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 20000
+    },
+    deskripsi: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    gambar: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    stokAwal: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 20
+    },
+    stok: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 20
+    },
+    terjualHariIni: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
+    dicariSaatHabis: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
+    terakhirDicariHabis: {
+      type: DataTypes.STRING(60),
+      allowNull: true
+    },
+    kataKunci: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: []
+    }
+  },
+  {
+    tableName: 'menus',
+    timestamps: true
+  }
+);
+
+// ============================================================================
+// 2. DATA SEED AWAL (12 Menu Kurasi Beserta Foto HD Unsplash)
+// ============================================================================
+const initialMenus = [
   {
     id: 1,
     kode: 'MN-01',
@@ -52,7 +122,7 @@ const dataMenu = [
     deskripsi: 'Mie keriting kenyal buatan sendiri dengan topping ayam cincang jamur shiitake dan minyak truffle.',
     gambar: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80',
     stokAwal: 35,
-    stok: 4, // US-02-3: <= 5 porsi -> otomatis memicu label "Stok Menipis"
+    stok: 4,
     terjualHariIni: 31,
     dicariSaatHabis: 1,
     terakhirDicariHabis: '2026-10-15T12:40:00.000Z',
@@ -67,7 +137,7 @@ const dataMenu = [
     deskripsi: 'Paha ayam panggang bumbu madu karamel disajikan bersama nasi hangat, lalapan, dan sambal korek.',
     gambar: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=600&q=80',
     stokAwal: 30,
-    stok: 0, // US-01-3 & US-03-1: Stok 0 (Habis) untuk rekomendasi pengganti
+    stok: 0,
     terjualHariIni: 30,
     dicariSaatHabis: 9,
     terakhirDicariHabis: '2026-10-15T13:15:00.000Z',
@@ -112,7 +182,7 @@ const dataMenu = [
     deskripsi: 'Espresso house blend dengan susu creamy, saus karamel panggang, dan sentuhan sea salt foam.',
     gambar: 'https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?auto=format&fit=crop&w=600&q=80',
     stokAwal: 35,
-    stok: 3, // US-02-3: <= 5 porsi -> memicu peringatan "Stok Menipis"
+    stok: 3,
     terjualHariIni: 32,
     dicariSaatHabis: 2,
     terakhirDicariHabis: '2026-10-15T13:05:00.000Z',
@@ -142,7 +212,7 @@ const dataMenu = [
     deskripsi: 'Matcha Jepang murni yang dikocok dingin dengan susu segar dan lapisan krim lembut di atasnya.',
     gambar: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=600&q=80',
     stokAwal: 30,
-    stok: 0, // US-01-3 & US-02-4: Stok 0 (Habis)
+    stok: 0,
     terjualHariIni: 30,
     dicariSaatHabis: 6,
     terakhirDicariHabis: '2026-10-15T13:22:00.000Z',
@@ -187,7 +257,7 @@ const dataMenu = [
     deskripsi: 'Tahu goreng balik renyah isi adonan ayam udang gurih disajikan dengan cocolan sambal kecap petis.',
     gambar: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
     stokAwal: 30,
-    stok: 5, // US-02-3: Tepat di batas <= 5 porsi -> memicu label "Stok Menipis"
+    stok: 5,
     terjualHariIni: 25,
     dicariSaatHabis: 3,
     terakhirDicariHabis: '2026-10-15T11:50:00.000Z',
@@ -210,26 +280,266 @@ const dataMenu = [
   }
 ];
 
+let dataMenu = initialMenus.map((m) => ({ ...m }));
+let isDbConnected = false;
+
 function perkayaStatusStok(item) {
+  const plain = item && typeof item.toJSON === 'function' ? item.toJSON() : { ...item };
   const batas = appConfig.batasStokMenipis;
-  const tersedia = item.stok > 0;
-  const stokMenipis = item.stok > 0 && item.stok <= batas;
+  const tersedia = plain.stok > 0;
+  const stokMenipis = plain.stok > 0 && plain.stok <= batas;
 
   let labelStok = 'Tersedia';
-  if (item.stok === 0) {
+  if (plain.stok === 0) {
     labelStok = 'Habis';
   } else if (stokMenipis) {
     labelStok = 'Stok Menipis';
   }
 
   return {
-    ...item,
+    ...plain,
     tersedia,
     stokMenipis,
     labelStok,
-    omzetHariIni: item.terjualHariIni * item.harga
+    omzetHariIni: (plain.terjualHariIni || 0) * (plain.harga || 0)
   };
 }
+
+/**
+ * Inisialisasi & Sinkronisasi Tabel `menus` di PostgreSQL.
+ * Jika tabel masih kosong, otomatis di-seed dengan 12 data menu awal.
+ */
+async function initMenuTable() {
+  try {
+    await Menu.sync({ alter: true });
+    const count = await Menu.count();
+    if (count === 0) {
+      for (const item of initialMenus) {
+        await Menu.create(item);
+      }
+      // Reset PostgreSQL sequence id agar autoIncrement tidak bentrok dengan ID seed (1..12)
+      await sequelize.query(`SELECT setval(pg_get_serial_sequence('menus', 'id'), COALESCE((SELECT MAX(id) FROM menus), 1), true);`);
+      console.log('[Sequelize] 12 data awal Menu berhasil di-seed ke tabel PostgreSQL "menus".');
+    } else {
+      await sequelize.query(`SELECT setval(pg_get_serial_sequence('menus', 'id'), COALESCE((SELECT MAX(id) FROM menus), 1), true);`);
+    }
+    const rows = await Menu.findAll({ order: [['id', 'ASC']] });
+    dataMenu = rows.map((r) => r.toJSON());
+    isDbConnected = true;
+    console.log(`[Sequelize] Tabel "menus" tersinkronisasi (${dataMenu.length} baris di PostgreSQL).`);
+  } catch (err) {
+    isDbConnected = false;
+    console.warn('[Sequelize] Gagal sinkronisasi tabel "menus":', err.message);
+  }
+}
+
+async function refreshCacheFromDb() {
+  if (!isDbConnected) return;
+  try {
+    const rows = await Menu.findAll({ order: [['id', 'ASC']] });
+    dataMenu = rows.map((r) => r.toJSON());
+  } catch (err) {
+    console.warn('[Sequelize] Gagal memuat ulang cache menu:', err.message);
+  }
+}
+
+// ============================================================================
+// 3. OPERASI CRUD SEQUELIZE (Dipanggil oleh Controller)
+// ============================================================================
+
+/**
+ * READ ALL (GET /api/produk atau /api/menu)
+ * Mengambil seluruh data menu langsung dari database PostgreSQL via Sequelize.
+ */
+async function findAllFromDb() {
+  if (isDbConnected) {
+    const rows = await Menu.findAll({ order: [['id', 'ASC']] });
+    dataMenu = rows.map((r) => r.toJSON());
+  }
+  return dataMenu.map(perkayaStatusStok);
+}
+
+/**
+ * READ BY ID (GET /api/produk/:id atau /api/menu/:id)
+ * Mengambil detail satu data menu berdasarkan ID dari database PostgreSQL.
+ */
+async function findByIdFromDb(id) {
+  const numId = Number(id);
+  if (Number.isNaN(numId)) return null;
+
+  if (isDbConnected) {
+    const row = await Menu.findByPk(numId);
+    if (!row) return null;
+    return perkayaStatusStok(row.toJSON());
+  }
+
+  const found = dataMenu.find((m) => m.id === numId);
+  return found ? perkayaStatusStok(found) : null;
+}
+
+/**
+ * CREATE (POST /api/produk atau /api/stok/tambah)
+ * Menambahkan data menu/produk baru ke dalam database PostgreSQL via Sequelize.
+ */
+async function createInDb({ nama, kategori, harga, deskripsi, stokAwal, stok, gambar }) {
+  const kuota = Math.max(0, Math.floor(Number(stok !== undefined ? stok : stokAwal) || 20));
+  const hargaValid = Math.max(1000, Math.floor(Number(harga) || 20000));
+  const kategoriValid = KATEGORI_MENU.includes(kategori) ? kategori : KATEGORI_MENU[0];
+  const namaBersih = String(nama || 'Menu Baru').trim();
+  const deskripsiBersih = String(deskripsi || 'Disajikan hangat langsung dari dapur.').trim();
+  const gambarValid =
+    gambar && String(gambar).trim().length > 5
+      ? String(gambar).trim()
+      : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
+  const kataKunci = namaBersih
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
+
+  if (isDbConnected) {
+    const maxIdRow = await Menu.max('id');
+    const nextNum = (Number(maxIdRow) || 0) + 1;
+    const kode = `MN-${String(nextNum).padStart(2, '0')}`;
+
+    const created = await Menu.create({
+      kode,
+      nama: namaBersih,
+      kategori: kategoriValid,
+      harga: hargaValid,
+      deskripsi: deskripsiBersih,
+      gambar: gambarValid,
+      stokAwal: kuota,
+      stok: kuota,
+      terjualHariIni: 0,
+      dicariSaatHabis: 0,
+      terakhirDicariHabis: null,
+      kataKunci
+    });
+
+    await refreshCacheFromDb();
+    return perkayaStatusStok(created.toJSON());
+  }
+
+  // Fallback jika DB belum nyala
+  const idBaru = dataMenu.length > 0 ? Math.max(...dataMenu.map((m) => m.id)) + 1 : 1;
+  const itemBaru = {
+    id: idBaru,
+    kode: `MN-${String(idBaru).padStart(2, '0')}`,
+    nama: namaBersih,
+    kategori: kategoriValid,
+    harga: hargaValid,
+    deskripsi: deskripsiBersih,
+    gambar: gambarValid,
+    stokAwal: kuota,
+    stok: kuota,
+    terjualHariIni: 0,
+    dicariSaatHabis: 0,
+    terakhirDicariHabis: null,
+    kataKunci
+  };
+  dataMenu.push(itemBaru);
+  return perkayaStatusStok(itemBaru);
+}
+
+/**
+ * UPDATE (PUT /api/produk/:id)
+ * Memperbarui data menu berdasarkan ID di database PostgreSQL via Sequelize.
+ */
+async function updateInDb(id, payload = {}) {
+  const numId = Number(id);
+  if (Number.isNaN(numId)) return null;
+
+  if (isDbConnected) {
+    const row = await Menu.findByPk(numId);
+    if (!row) return null;
+
+    if (payload.nama !== undefined && String(payload.nama).trim() !== '') {
+      row.nama = String(payload.nama).trim();
+      row.kataKunci = row.nama
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 2);
+    }
+    if (payload.kategori !== undefined && KATEGORI_MENU.includes(payload.kategori)) {
+      row.kategori = payload.kategori;
+    }
+    if (payload.harga !== undefined && !Number.isNaN(Number(payload.harga))) {
+      row.harga = Math.max(1000, Math.floor(Number(payload.harga)));
+    }
+    if (payload.deskripsi !== undefined) {
+      row.deskripsi = String(payload.deskripsi).trim();
+    }
+    if (payload.gambar !== undefined && String(payload.gambar).trim() !== '') {
+      row.gambar = String(payload.gambar).trim();
+    }
+    if (payload.stok !== undefined && !Number.isNaN(Number(payload.stok))) {
+      const angkaStok = Math.max(0, Math.floor(Number(payload.stok)));
+      row.stok = angkaStok;
+      if (angkaStok > row.stokAwal) {
+        row.stokAwal = angkaStok;
+      }
+    }
+    if (payload.stokAwal !== undefined && !Number.isNaN(Number(payload.stokAwal))) {
+      row.stokAwal = Math.max(0, Math.floor(Number(payload.stokAwal)));
+    }
+
+    await row.save();
+    await refreshCacheFromDb();
+    return perkayaStatusStok(row.toJSON());
+  }
+
+  const target = dataMenu.find((m) => m.id === numId);
+  if (!target) return null;
+
+  if (payload.nama !== undefined && String(payload.nama).trim() !== '') {
+    target.nama = String(payload.nama).trim();
+  }
+  if (payload.kategori !== undefined && KATEGORI_MENU.includes(payload.kategori)) {
+    target.kategori = payload.kategori;
+  }
+  if (payload.harga !== undefined && !Number.isNaN(Number(payload.harga))) {
+    target.harga = Math.max(1000, Math.floor(Number(payload.harga)));
+  }
+  if (payload.deskripsi !== undefined) {
+    target.deskripsi = String(payload.deskripsi).trim();
+  }
+  if (payload.gambar !== undefined && String(payload.gambar).trim() !== '') {
+    target.gambar = String(payload.gambar).trim();
+  }
+  if (payload.stok !== undefined && !Number.isNaN(Number(payload.stok))) {
+    const angkaStok = Math.max(0, Math.floor(Number(payload.stok)));
+    target.stok = angkaStok;
+    if (angkaStok > target.stokAwal) target.stokAwal = angkaStok;
+  }
+  return perkayaStatusStok(target);
+}
+
+/**
+ * DELETE (DELETE /api/produk/:id)
+ * Menghapus data menu berdasarkan ID dari database PostgreSQL via Sequelize.
+ */
+async function deleteFromDb(id) {
+  const numId = Number(id);
+  if (Number.isNaN(numId)) return null;
+
+  if (isDbConnected) {
+    const row = await Menu.findByPk(numId);
+    if (!row) return null;
+    const deletedData = perkayaStatusStok(row.toJSON());
+    await row.destroy();
+    await refreshCacheFromDb();
+    return deletedData;
+  }
+
+  const idx = dataMenu.findIndex((m) => m.id === numId);
+  if (idx === -1) return null;
+  const [removed] = dataMenu.splice(idx, 1);
+  return perkayaStatusStok(removed);
+}
+
+// ============================================================================
+// 4. HELPER SINKRON & OPERASIONAL (Kompatibel dengan seluruh fitur PRD)
+// ============================================================================
 
 function getAllMenu() {
   return dataMenu.map(perkayaStatusStok);
@@ -292,6 +602,15 @@ function catatPencarianMenuHabis(menuId) {
   if (target) {
     target.dicariSaatHabis += 1;
     target.terakhirDicariHabis = new Date().toISOString();
+    if (isDbConnected) {
+      Menu.update(
+        {
+          dicariSaatHabis: target.dicariSaatHabis,
+          terakhirDicariHabis: target.terakhirDicariHabis
+        },
+        { where: { id: target.id } }
+      ).catch(() => {});
+    }
   }
 }
 
@@ -302,67 +621,30 @@ function cariMenuDariTeks(kalimat) {
   return dataMenu
     .filter((item) => {
       const namaCocok = teks.includes(item.nama.toLowerCase());
-      const kataKunciCocok = item.kataKunci.some((kw) => teks.includes(kw));
+      const kwList = Array.isArray(item.kataKunci) ? item.kataKunci : [];
+      const kataKunciCocok = kwList.some((kw) => teks.includes(kw));
       return namaCocok || kataKunciCocok;
     })
     .map(perkayaStatusStok);
 }
 
-function toggleStatusHabis(menuId, paksaHabis = null) {
+async function toggleStatusHabis(menuId, paksaHabis = null) {
   const target = dataMenu.find((m) => m.id === Number(menuId));
   if (!target) return null;
 
   const jadikanHabis = paksaHabis !== null ? Boolean(paksaHabis) : target.stok > 0;
+  const stokBaru = jadikanHabis ? 0 : target.stokAwal > 0 ? Math.min(15, target.stokAwal) : 15;
 
-  if (jadikanHabis) {
-    target.stok = 0;
-  } else {
-    target.stok = target.stokAwal > 0 ? Math.min(15, target.stokAwal) : 15;
-  }
-
-  return perkayaStatusStok(target);
+  return updateInDb(menuId, { stok: stokBaru });
 }
 
-function updateKuotaStok(menuId, jumlahStokBaru) {
-  const target = dataMenu.find((m) => m.id === Number(menuId));
-  if (!target) return null;
-
+async function updateKuotaStok(menuId, jumlahStokBaru) {
   const angka = Math.max(0, Math.floor(Number(jumlahStokBaru) || 0));
-  target.stok = angka;
-  if (angka > target.stokAwal) {
-    target.stokAwal = angka;
-  }
-
-  return perkayaStatusStok(target);
+  return updateInDb(menuId, { stok: angka });
 }
 
-function tambahMenuBaru({ nama, kategori, harga, deskripsi, stokAwal, gambar }) {
-  const idBaru = dataMenu.length > 0 ? Math.max(...dataMenu.map((m) => m.id)) + 1 : 1;
-  const kuota = Math.max(0, Math.floor(Number(stokAwal) || 20));
-  const hargaValid = Math.max(1000, Math.floor(Number(harga) || 20000));
-  const kategoriValid = KATEGORI_MENU.includes(kategori) ? kategori : KATEGORI_MENU[0];
-
-  const itemBaru = {
-    id: idBaru,
-    kode: `MN-${String(idBaru).padStart(2, '0')}`,
-    nama: String(nama).trim(),
-    kategori: kategoriValid,
-    harga: hargaValid,
-    deskripsi: String(deskripsi || 'Disajikan hangat langsung dari dapur Devtech.').trim(),
-    gambar: gambar || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
-    stokAwal: kuota,
-    stok: kuota,
-    terjualHariIni: 0,
-    dicariSaatHabis: 0,
-    terakhirDicariHabis: null,
-    kataKunci: String(nama)
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((w) => w.length > 2)
-  };
-
-  dataMenu.push(itemBaru);
-  return perkayaStatusStok(itemBaru);
+async function tambahMenuBaru(payload) {
+  return createInDb(payload);
 }
 
 function validasiDanKurangiStok(daftarItemPesanan) {
@@ -379,8 +661,7 @@ function validasiDanKurangiStok(daftarItemPesanan) {
     }
 
     if (target.stok === 0) {
-      target.dicariSaatHabis += 1;
-      target.terakhirDicariHabis = new Date().toISOString();
+      catatPencarianMenuHabis(target.id);
       return {
         sukses: false,
         menuHabisId: target.id,
@@ -404,6 +685,13 @@ function validasiDanKurangiStok(daftarItemPesanan) {
     target.stok -= qty;
     target.terjualHariIni += qty;
 
+    if (isDbConnected) {
+      Menu.update(
+        { stok: target.stok, terjualHariIni: target.terjualHariIni },
+        { where: { id: target.id } }
+      ).catch(() => {});
+    }
+
     hasilItem.push({
       menuId: target.id,
       kode: target.kode,
@@ -420,6 +708,16 @@ function validasiDanKurangiStok(daftarItemPesanan) {
 }
 
 module.exports = {
+  Menu,
+  initMenuTable,
+  isDatabaseConnected: () => isDbConnected,
+  // CRUD Sequelize Functions
+  findAllFromDb,
+  findByIdFromDb,
+  createInDb,
+  updateInDb,
+  deleteFromDb,
+  // Helper & Operational Functions
   getAllMenu,
   getKategoriList,
   getMenuTersedia,

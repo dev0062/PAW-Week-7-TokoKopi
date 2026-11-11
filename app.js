@@ -4,12 +4,7 @@
  * ============================================================================
  * Entry Point Aplikasi Web Devtech (v1.0)
  * Penulis PRD : Dev Alldino Zain (20240140260)
- * Arsitektur  : MVC (Model-View-Controller) berbasis Node.js, Express, & EJS
- * Cakupan PRD :
- * - Scope A: Pemesanan Mandiri Meja & Chatbot Pelanggan (GET /)
- * - Scope B: Layar Antrean Dapur FIFO & Kelola Stok Staf (GET /staf - Terproteksi)
- * - Scope C: Dashboard Menu Paling Laku & Pantauan Stok Pemilik (GET /pemilik - Terproteksi)
- * - Portal Masuk: Check-In Meja Pelanggan & Login Staf/Pemilik (GET /login)
+ * Arsitektur  : MVC (Model-View-Controller) berbasis Node.js, Express, EJS & Sequelize (PostgreSQL)
  * ============================================================================
  */
 
@@ -17,6 +12,9 @@ const path = require('path');
 require('dotenv').config();
 const express = require('express');
 const appConfig = require('./config/appConfig');
+const { sequelize, ensureDatabaseExists } = require('./config/database');
+const menuModel = require('./models/menuModel');
+const orderModel = require('./models/orderModel');
 const requestLogger = require('./middlewares/requestLogger');
 const { attachSession } = require('./middlewares/authMiddleware');
 const appRoutes = require('./routes/appRoutes');
@@ -75,16 +73,31 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Menjalankan Server
-app.listen(appConfig.port, () => {
-  console.log('==============================================================');
-  console.log(` ${appConfig.appName} ${appConfig.version} — ${appConfig.brandSubtitle}`);
-  console.log(` Penulis PRD : ${appConfig.authorName} (${appConfig.authorNim})`);
-  console.log(` Server URL  : http://localhost:${appConfig.port}`);
-  console.log('--------------------------------------------------------------');
-  console.log(` [Scope A] Meja Pelanggan (QR)      : http://localhost:${appConfig.port}/?meja=04`);
-  console.log(` [Portal]  Login Staf & Pemilik     : http://localhost:${appConfig.port}/login`);
-  console.log(` [Scope B] Layar Staf Dapur & Stok  : http://localhost:${appConfig.port}/staf`);
-  console.log(` [Scope C] Dashboard Laporan Pemilik: http://localhost:${appConfig.port}/pemilik`);
-  console.log('==============================================================');
-});
+// Inisialisasi Database PostgreSQL (Sequelize) & Menjalankan Server
+async function startServer() {
+  try {
+    await ensureDatabaseExists();
+    await sequelize.authenticate();
+    console.log('[Sequelize] Koneksi ke PostgreSQL berhasil terhubung.');
+    await menuModel.initMenuTable();
+    await orderModel.initOrderTable();
+  } catch (dbErr) {
+    console.warn('[Sequelize] Peringatan koneksi PostgreSQL (pastikan DB_PASSWORD di .env sesuai pgAdmin):', dbErr.message);
+  }
+
+  app.listen(appConfig.port, () => {
+    console.log('==============================================================');
+    console.log(` ${appConfig.appName} ${appConfig.version} — ${appConfig.brandSubtitle}`);
+    console.log(` Penulis PRD : ${appConfig.authorName} (${appConfig.authorNim})`);
+    console.log(` Server URL  : http://localhost:${appConfig.port}`);
+    console.log('--------------------------------------------------------------');
+    console.log(` [Scope A] Meja Pelanggan (QR)      : http://localhost:${appConfig.port}/?meja=04`);
+    console.log(` [Portal]  Login Staf & Pemilik     : http://localhost:${appConfig.port}/login`);
+    console.log(` [Scope B] Layar Staf Dapur & Stok  : http://localhost:${appConfig.port}/staf`);
+    console.log(` [Scope C] Dashboard Laporan Pemilik: http://localhost:${appConfig.port}/pemilik`);
+    console.log(` [API CRUD] REST Endpoint Produk    : http://localhost:${appConfig.port}/api/produk`);
+    console.log('==============================================================');
+  });
+}
+
+startServer();

@@ -2,27 +2,95 @@
  * ============================================================================
  * FILE: models/orderModel.js
  * ============================================================================
- * Referensi PRD:
- * - US-01-4 & F-01: Menyimpan pesanan mandiri pelanggan dari meja/Chatbot,
- *   memberikan nomor antrean pesanan, dan meneruskannya ke layar dapur.
- * - US-01-5 & F-05: Menyediakan pembaruan status pesanan ("Sedang Diproses" /
- *   "Siap Diantar") secara real-time ke jendela Chatbot pelanggan.
- * - US-03-3 & F-03: Menampilkan daftar pesanan pelanggan otomatis di layar dapur
- *   lengkap dengan detail menu, jumlah porsi, dan nomor meja.
- * - US-03-4 & F-03: Mengurutkan daftar pesanan masuk berdasarkan waktu pemesanan
- *   paling awal di posisi paling atas (First-In, First-Out / FIFO).
- * - US-03-5 & F-03: Memindahkan pesanan ke riwayat selesai saat staf menekan
- *   tombol "Pesanan Selesai" dan mengirim pesan pemberitahuan ke HP pelanggan.
- * - Mitigasi Risiko 3: Konfirmasi nomor meja oleh staf pada pesanan masuk.
+ * Model Sequelize untuk Tabel `orders` di PostgreSQL (pgAdmin).
+ * Menyimpan data pesanan meja, status antrean dapur FIFO, dan riwayat selesai.
  * ============================================================================
  */
 
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 const menuModel = require('./menuModel');
+
+// ============================================================================
+// 1. DEFINISI MODEL SEQUELIZE (`orders` table di PostgreSQL)
+// ============================================================================
+const Order = sequelize.define(
+  'Order',
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    nomorAntrean: {
+      type: DataTypes.STRING(30),
+      allowNull: false,
+      unique: true
+    },
+    nomorMeja: {
+      type: DataTypes.STRING(10),
+      allowNull: false
+    },
+    namaPelanggan: {
+      type: DataTypes.STRING(120),
+      allowNull: false
+    },
+    sumberPesan: {
+      type: DataTypes.STRING(60),
+      allowNull: false,
+      defaultValue: 'Chatbot Meja'
+    },
+    items: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: []
+    },
+    catatan: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    totalPorsi: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1
+    },
+    totalHarga: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
+    status: {
+      type: DataTypes.STRING(40),
+      allowNull: false,
+      defaultValue: 'Menunggu Konfirmasi'
+    },
+    terkonfirmasiMeja: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    waktuPesan: {
+      type: DataTypes.STRING(60),
+      allowNull: false
+    },
+    waktuUpdate: {
+      type: DataTypes.STRING(60),
+      allowNull: false
+    },
+    notifikasiTerbaru: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    }
+  },
+  {
+    tableName: 'orders',
+    timestamps: true
+  }
+);
 
 let urutanAntreanCounter = 104;
 
-// Data awal antrean dapur agar staf & pemilik langsung dapat menguji alur US-03-3, US-03-4, US-03-5
-const daftarPesanan = [
+const initialOrders = [
   {
     id: 1,
     nomorAntrean: 'ANT-101',
@@ -132,21 +200,40 @@ const daftarPesanan = [
   }
 ];
 
-/**
- * US-01-4 & Mitigasi Risiko 2 & 3:
- * Membuat pesanan baru dari meja pelanggan, memvalidasi nomor meja,
- * mengurangi stok menu secara otomatis, dan meneruskan ke layar antrean dapur.
- * @param {Object} payload
- * @returns {{sukses: boolean, pesanan?: Object, pesanError?: string, rekomendasiPengganti?: Array<Object>}}
- */
-function buatPesananBaru({
+let daftarPesanan = initialOrders.map((o) => ({ ...o }));
+let isOrderDbConnected = false;
+
+async function initOrderTable() {
+  try {
+    await Order.sync({ alter: true });
+    const count = await Order.count();
+    if (count === 0) {
+      for (const item of initialOrders) {
+        await Order.create(item);
+      }
+      await sequelize.query(`SELECT setval(pg_get_serial_sequence('orders', 'id'), COALESCE((SELECT MAX(id) FROM orders), 1), true);`);
+      console.log('[Sequelize] 3 data awal Pesanan berhasil di-seed ke tabel PostgreSQL "orders".');
+    } else {
+      await sequelize.query(`SELECT setval(pg_get_serial_sequence('orders', 'id'), COALESCE((SELECT MAX(id) FROM orders), 1), true);`);
+    }
+    const rows = await Order.findAll({ order: [['id', 'ASC']] });
+    daftarPesanan = rows.map((r) => r.toJSON());
+    urutanAntreanCounter = 101 + daftarPesanan.length;
+    isOrderDbConnected = true;
+    console.log(`[Sequelize] Tabel "orders" tersinkronisasi (${daftarPesanan.length} baris di PostgreSQL).`);
+  } catch (err) {
+    isOrderDbConnected = false;
+    console.warn('[Sequelize] Gagal sinkronisasi tabel "orders":', err.message);
+  }
+}
+
+async function buatPesananBaru({
   nomorMeja,
   namaPelanggan,
   items,
   catatan = '',
   sumberPesan = 'Chatbot Meja'
 }) {
-  // Mitigasi Risiko 3: Validasi nomor meja wajib diisi (1 s/d 20)
   const mejaBersih = String(nomorMeja || '').trim().padStart(2, '0');
   const angkaMeja = Number(mejaBersih);
   if (!angkaMeja || angkaMeja < 1 || angkaMeja > 50) {
@@ -156,7 +243,6 @@ function buatPesananBaru({
     };
   }
 
-  // Mitigasi Risiko 2 & US-03-2: Validasi dan kurangi stok secara otomatis
   const hasilStok = menuModel.validasiDanKurangiStok(items);
   if (!hasilStok.sukses) {
     const rekomendasiPengganti = menuModel.getRekomendasiTerlarisTersedia(3);
@@ -174,8 +260,7 @@ function buatPesananBaru({
   const kodeAntrean = `ANT-${urutanAntreanCounter++}`;
   const sekarangISO = new Date().toISOString();
 
-  const pesananBaru = {
-    id: daftarPesanan.length + 1,
+  const payloadBaru = {
     nomorAntrean: kodeAntrean,
     nomorMeja: mejaBersih,
     namaPelanggan: String(namaPelanggan || `Pelanggan Meja ${mejaBersih}`).trim(),
@@ -191,59 +276,47 @@ function buatPesananBaru({
     notifikasiTerbaru: `Pesanan ${kodeAntrean} berhasil diteruskan ke dapur untuk Meja ${mejaBersih}.`
   };
 
-  daftarPesanan.push(pesananBaru);
-  return { sukses: true, pesanan: pesananBaru };
+  if (isOrderDbConnected) {
+    try {
+      const created = await Order.create(payloadBaru);
+      const plain = created.toJSON();
+      daftarPesanan.push(plain);
+      return { sukses: true, pesanan: plain };
+    } catch (e) {
+      console.warn('[Sequelize] Gagal insert pesanan ke DB:', e.message);
+    }
+  }
+
+  const pesananFallback = {
+    id: daftarPesanan.length + 1,
+    ...payloadBaru
+  };
+  daftarPesanan.push(pesananFallback);
+  return { sukses: true, pesanan: pesananFallback };
 }
 
-/**
- * US-03-3 & US-03-4:
- * Mengambil daftar antrean pesanan yang belum selesai ("Menunggu Konfirmasi" & "Sedang Diproses"),
- * diurutkan dari waktu masuk paling awal di posisi paling atas (FIFO).
- * @returns {Array<Object>}
- */
 function getAntreanAktifFIFO() {
   return daftarPesanan
     .filter((p) => p.status !== 'Siap Diantar')
     .sort((a, b) => new Date(a.waktuPesan).getTime() - new Date(b.waktuPesan).getTime());
 }
 
-/**
- * US-03-5:
- * Mengambil daftar pesanan yang telah selesai dimasak ("Siap Diantar"),
- * diurutkan dari yang paling baru selesai.
- * @returns {Array<Object>}
- */
 function getRiwayatPesananSelesai() {
   return daftarPesanan
     .filter((p) => p.status === 'Siap Diantar')
     .sort((a, b) => new Date(b.waktuUpdate).getTime() - new Date(a.waktuUpdate).getTime());
 }
 
-/**
- * Mengambil seluruh pesanan untuk kalkulasi metrik laporan harian pemilik.
- * @returns {Array<Object>}
- */
 function getAllPesanan() {
   return [...daftarPesanan];
 }
 
-/**
- * US-01-5:
- * Mencari detail pesanan berdasarkan nomor antrean untuk pembaruan status real-time di Chatbot.
- * @param {string} nomorAntrean
- * @returns {Object|null}
- */
 function getPesananByNomorAntrean(nomorAntrean) {
   if (!nomorAntrean) return null;
   const targetKode = String(nomorAntrean).trim().toUpperCase();
   return daftarPesanan.find((p) => p.nomorAntrean.toUpperCase() === targetKode) || null;
 }
 
-/**
- * Mengambil daftar pesanan milik nomor meja tertentu (US-01-1 & US-01-5).
- * @param {string} nomorMeja
- * @returns {Array<Object>}
- */
 function getPesananByMeja(nomorMeja) {
   const mejaBersih = String(nomorMeja || '').trim().padStart(2, '0');
   return daftarPesanan
@@ -251,16 +324,7 @@ function getPesananByMeja(nomorMeja) {
     .sort((a, b) => new Date(b.waktuPesan).getTime() - new Date(a.waktuPesan).getTime());
 }
 
-/**
- * US-01-5, US-03-5 & Mitigasi Risiko 3:
- * Staf dapur memperbarui status pesanan ("Sedang Diproses" atau "Siap Diantar")
- * serta memverifikasi nomor meja. Perubahan ini otomatis menghasilkan pesan notifikasi
- * yang dibaca oleh Chatbot pelanggan secara real-time.
- * @param {string} nomorAntrean
- * @param {string} statusBaru
- * @returns {Object|null}
- */
-function updateStatusPesanan(nomorAntrean, statusBaru) {
+async function updateStatusPesanan(nomorAntrean, statusBaru) {
   const pesanan = getPesananByNomorAntrean(nomorAntrean);
   if (!pesanan) return null;
 
@@ -277,10 +341,28 @@ function updateStatusPesanan(nomorAntrean, statusBaru) {
     pesanan.notifikasiTerbaru = `Pesanan Siap: Pesanan ${pesanan.nomorAntrean} (Meja ${pesanan.nomorMeja}) sudah selesai dimasak dan sedang diantar ke meja Anda.`;
   }
 
+  if (isOrderDbConnected) {
+    try {
+      await Order.update(
+        {
+          status: pesanan.status,
+          terkonfirmasiMeja: pesanan.terkonfirmasiMeja,
+          waktuUpdate: pesanan.waktuUpdate,
+          notifikasiTerbaru: pesanan.notifikasiTerbaru
+        },
+        { where: { nomorAntrean: pesanan.nomorAntrean } }
+      );
+    } catch (e) {
+      console.warn('[Sequelize] Gagal update status pesanan di DB:', e.message);
+    }
+  }
+
   return pesanan;
 }
 
 module.exports = {
+  Order,
+  initOrderTable,
   buatPesananBaru,
   getAntreanAktifFIFO,
   getRiwayatPesananSelesai,

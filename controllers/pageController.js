@@ -26,9 +26,8 @@ const {
  * Merender halaman pemesanan mandiri pelanggan dari meja (Scan QR Code)
  * beserta jendela Asisten Chatbot interaktif.
  */
-function renderHalamanPelanggan(req, res, next) {
+async function renderHalamanPelanggan(req, res, next) {
   try {
-    // US-01-1: Prioritaskan nomor meja dari QR Code (?meja=XX) atau dari sesi Check-In Meja
     const rawMeja =
       req.query.meja ||
       (req.pelanggan && req.pelanggan.nomorMeja) ||
@@ -42,7 +41,7 @@ function renderHalamanPelanggan(req, res, next) {
       (req.pelanggan && req.pelanggan.namaPelanggan) ||
       'Evan Vijaya Putra';
 
-    const semuaMenu = menuModel.getAllMenu();
+    const semuaMenu = await menuModel.findAllFromDb();
     const menuTersedia = menuModel.getMenuTersedia();
     const kategoriList = menuModel.getKategoriList();
     const tigaTerlaris = menuModel.getRekomendasiTerlarisTersedia(3);
@@ -69,14 +68,12 @@ function renderHalamanPelanggan(req, res, next) {
 
 /**
  * Scope B (US-03-1 s/d US-03-5):
- * Merender halaman operasional Staf Dapur (Nazhat Hafidz Al Jauzi) untuk:
- * - Melihat antrean pesanan masuk secara FIFO beserta nomor meja & waktu tunggu
- * - Mengubah status pesanan menjadi "Sedang Diproses" atau "Siap Diantar"
- * - Menginput kuota porsi stok awal & tombol 1-klik "Habis"
+ * Merender halaman operasional Staf Dapur (Nazhat Hafidz Al Jauzi)
+ * beserta fitur CRUD (Tambah, Edit, Hapus) Menu & Stok ke Database PostgreSQL.
  */
-function renderHalamanStaf(req, res, next) {
+async function renderHalamanStaf(req, res, next) {
   try {
-    const semuaMenu = menuModel.getAllMenu();
+    const semuaMenu = await menuModel.findAllFromDb();
     const kategoriList = menuModel.getKategoriList();
     const antreanAktif = orderModel.getAntreanAktifFIFO();
     const riwayatSelesai = orderModel.getRiwayatPesananSelesai();
@@ -106,22 +103,17 @@ function renderHalamanStaf(req, res, next) {
 
 /**
  * Scope C (US-02-1 s/d US-02-5):
- * Merender halaman Dashboard Laporan Pemilik (Dev Yuftiana Ayyun) untuk:
- * - Melihat peringkat otomatis menu paling laku setiap hari (US-02-1)
- * - Memantau sisa stok bahan baku secara langsung saat jam ramai (US-02-2)
- * - Melihat peringatan merah "Stok Menipis" untuk stok <= 5 porsi (US-02-3)
- * - Melihat riwayat menu yang paling sering dicari di Chatbot saat habis (US-02-4)
- * - Mencetak / mengunduh rekap laporan harian PDF & Excel/CSV (US-02-5)
+ * Merender halaman Dashboard Laporan Pemilik (Dev Yuftiana Ayyun).
  */
-function renderHalamanPemilik(req, res, next) {
+async function renderHalamanPemilik(req, res, next) {
   try {
+    await menuModel.findAllFromDb();
     const filterWaktu = req.query.periode || 'hari-ini';
     const peringkatMenu = menuModel.getPeringkatMenuTerlaris();
     const menuStokKritis = menuModel.getMenuPerluPerhatianStok();
     const riwayatDicariHabis = menuModel.getRiwayatMenuDicariSaatHabis();
     const semuaPesanan = orderModel.getAllPesanan();
 
-    // Kalkulasi ringkasan eksekutif untuk pemilik
     const totalPorsiTerjual = peringkatMenu.reduce(
       (sum, item) => sum + item.terjualHariIni,
       0
