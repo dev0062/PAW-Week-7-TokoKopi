@@ -13,7 +13,7 @@
 const appConfig = require('../config/appConfig');
 const menuModel = require('../models/menuModel');
 const orderModel = require('../models/orderModel');
-const { QUICK_REPLIES_STANDAR } = require('../utils/aiAgent');
+const { QUICK_REPLIES_STANDAR } = require('../services/gemini.service');
 const {
   formatRupiah,
   formatJamMenit,

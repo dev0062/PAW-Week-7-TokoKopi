@@ -58,8 +58,7 @@ router.delete('/api/menu/:id', apiController.deleteProduk);
 router.get('/api/status', apiController.getStatusSistem);
 router.get('/api/sinkronisasi', apiController.getSinkronisasiData);
 
-// API Chatbot & Pesanan Pelanggan
-router.post('/api/chat', apiController.postChatMessage);
+// API Pesanan Pelanggan (Endpoint /api/chat dipisahkan ke routes/chat.routes.js)
 router.post('/api/pesanan', apiController.postBuatPesanan);
 router.get('/api/pesanan/:nomorAntrean', apiController.getStatusPesanan);
 

@@ -17,6 +17,7 @@ const menuModel = require('./models/menuModel');
 const orderModel = require('./models/orderModel');
 const requestLogger = require('./middlewares/requestLogger');
 const { attachSession } = require('./middlewares/authMiddleware');
+const chatRoutes = require('./routes/chat.routes');
 const appRoutes = require('./routes/appRoutes');
 
 const app = express();
@@ -34,7 +35,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(attachSession);
 
-// Pendaftaran Seluruh Route MVC (Halaman & API)
+// Pendaftaran Route AI Assistant (POST /api/chat -> validateChatInput -> chat.controller -> gemini.service)
+app.use('/', chatRoutes);
+
+// Pendaftaran Seluruh Route MVC (Halaman & API CRUD)
 app.use('/', appRoutes);
 
 // Handler 404 (Halaman / Endpoint Tidak Ditemukan)

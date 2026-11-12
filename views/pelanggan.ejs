@@ -517,11 +517,70 @@
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
+    /**
+     * FUNGSI: Menampilkan indikator loading ("Asisten AI sedang memproses...")
+     * sesuai ketentuan Modul Praktikum Bagian 5 (Implementasi AI pada Frontend).
+     */
+    function tampilkanLoadingChat() {
+      const loadingEl = document.createElement('div');
+      loadingEl.id = 'chat-loading-indicator';
+      loadingEl.className = 'flex items-start gap-2.5';
+      loadingEl.innerHTML = `
+        <span class="w-6 h-6 rounded-lg bg-stone-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+          DT
+        </span>
+        <div class="bg-stone-100 border border-stone-200 rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-stone-600 text-xs flex items-center gap-2">
+          <span class="inline-block w-2 h-2 rounded-full bg-stone-500 animate-ping"></span>
+          <span>Asisten AI sedang memeriksa stok &amp; menyiapkan jawaban...</span>
+        </div>
+      `;
+      chatMessages.appendChild(loadingEl);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hapusLoadingChat() {
+      const existing = document.getElementById('chat-loading-indicator');
+      if (existing) existing.remove();
+    }
+
+    /**
+     * FUNGSI: Menampilkan pesan error di ruang percakapan jika request gagal,
+     * pesan terlalu panjang/kosong, atau layanan Gemini tidak tersedia (Bagian 5 Modul).
+     */
+    function tampilkanErrorChat(pesanError) {
+      const errWrapper = document.createElement('div');
+      errWrapper.className = 'flex items-start gap-2.5';
+      errWrapper.innerHTML = `
+        <span class="w-6 h-6 rounded-lg bg-red-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+          !
+        </span>
+        <div class="bg-red-50 border border-red-200 rounded-2xl rounded-tl-sm p-3 text-red-800 shadow-xs max-w-[92%] text-xs">
+          <p class="font-semibold">Pemberitahuan Sistem</p>
+          <p class="mt-0.5 leading-relaxed">${escapeHtml(pesanError)}</p>
+        </div>
+      `;
+      chatMessages.appendChild(errWrapper);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    /**
+     * FUNGSI: Mengirim pertanyaan pengguna ke backend (`POST /api/chat`) menggunakan Fetch API,
+     * mengatur loading state & error state, serta merender respons AI + kartu menu (vcard).
+     */
     async function kirimPertanyaanKeChatbot(kalimat) {
       const pesanBersih = String(kalimat || '').trim();
-      if (!pesanBersih) return;
+      if (!pesanBersih) {
+        tampilkanErrorChat('Pesan pertanyaan tidak boleh kosong. Silakan ketik pertanyaan Anda.');
+        return;
+      }
 
       tambahPesanChat({ pengirim: 'pelanggan', teksUtama: pesanBersih });
+      tampilkanLoadingChat();
+
+      const submitBtn = formChat.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      inputChat.disabled = true;
+
       const antreanTerakhir = Array.from(statusAntreanTerakhir.keys()).pop() || '';
 
       try {
@@ -529,26 +588,40 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            message: pesanBersih,
             pesan: pesanBersih,
             nomorMeja: nomorMejaAktif,
             nomorAntreanAktif: antreanTerakhir
           })
         });
         const data = await res.json();
+        hapusLoadingChat();
 
-        if (data.sukses) {
-          tambahPesanChat({
-            pengirim: 'asisten',
-            teksUtama: data.balasan,
-            subTeks: data.subTeks,
-            rekomendasiMenu: data.rekomendasiMenu
-          });
+        if (!res.ok || (!data.sukses && !data.success)) {
+          tampilkanErrorChat(
+            data.pesanError || data.message || 'Gagal memproses pertanyaan Anda.'
+          );
+          return;
         }
-      } catch (err) {
+
+        const teksJawaban =
+          (data.data && data.data.reply) ||
+          data.balasan ||
+          'Berikut informasi dari kedai kami.';
+
         tambahPesanChat({
           pengirim: 'asisten',
-          teksUtama: 'Maaf, koneksi ke asisten sedang terganggu.'
+          teksUtama: teksJawaban,
+          subTeks: data.subTeks || '',
+          rekomendasiMenu: data.rekomendasiMenu || (data.data && data.data.rekomendasiMenu) || []
         });
+      } catch (err) {
+        hapusLoadingChat();
+        tampilkanErrorChat('Maaf, koneksi ke server AI Assistant sedang terganggu. Silakan periksa jaringan Anda dan coba lagi.');
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        inputChat.disabled = false;
+        inputChat.focus();
       }
     }
 

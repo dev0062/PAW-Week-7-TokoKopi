@@ -16,7 +16,7 @@
 const appConfig = require('../config/appConfig');
 const menuModel = require('../models/menuModel');
 const orderModel = require('../models/orderModel');
-const { prosesPesanPelanggan } = require('../utils/aiAgent');
+const { generateChatResponse } = require('../services/gemini.service');
 const { hitungWaktuTunggu } = require('../utils/formatter');
 
 // ============================================================================
@@ -189,8 +189,8 @@ async function postChatMessage(req, res, next) {
       });
     }
 
-    const hasilRespon = await prosesPesanPelanggan({
-      pesan,
+    const hasilRespon = await generateChatResponse({
+      message: pesan,
       nomorMeja: nomorMeja || appConfig.mejaDefault,
       nomorAntreanAktif
     });
