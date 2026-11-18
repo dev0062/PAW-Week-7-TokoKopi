@@ -89,7 +89,9 @@ function attachSession(req, res, next) {
 }
 
 /**
- * Middleware: Wajib Login Pelanggan untuk membuka katalog menu & pesan dari meja
+ * Middleware: Wajib Login Pelanggan untuk membuka katalog menu & pesan dari meja.
+ * Mengarahkan pelanggan ke halaman khusus check-in meja (/masuk-meja) tanpa
+ * menampilkan form login pegawai/manajemen internal.
  */
 function requirePelanggan(req, res, next) {
   // Jika sudah ada sesi pelanggan
@@ -99,15 +101,16 @@ function requirePelanggan(req, res, next) {
 
   // Jika URL membawa ?meja=XX (misal scan QR code fisik di meja)
   if (req.query.meja) {
-    return res.redirect(`/login?role=pelanggan&meja=${req.query.meja}`);
+    return res.redirect(`/masuk-meja?meja=${req.query.meja}`);
   }
 
-  // Jika belum login pelanggan sama sekali, arahkan ke login
-  return res.redirect('/login');
+  // Jika belum check-in meja sama sekali, arahkan ke halaman masuk meja pelanggan
+  return res.redirect('/masuk-meja');
 }
 
 /**
  * Middleware proteksi rute internal ('pemilik' atau 'staf').
+ * Mengarahkan staf/pemilik yang belum login ke halaman khusus portal internal (/portal-internal).
  */
 function requireRole(allowedRoles = ['pemilik', 'staf']) {
   return function (req, res, next) {
@@ -121,7 +124,7 @@ function requireRole(allowedRoles = ['pemilik', 'staf']) {
         });
       }
       const roleParam = allowedRoles.includes('staf') ? 'staf' : 'pemilik';
-      return res.redirect(`/login?role=${roleParam}`);
+      return res.redirect(`/portal-internal?role=${roleParam}`);
     }
 
     if (!allowedRoles.includes(req.user.role)) {
