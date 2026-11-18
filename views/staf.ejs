@@ -17,7 +17,7 @@
   <% if (typeof pesanAksesDitolak !== 'undefined' && pesanAksesDitolak) { %>
     <div role="alert" class="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs sm:text-sm text-amber-950 flex items-center justify-between gap-3 shadow-xs">
       <span><strong>Pemberitahuan:</strong> <%= pesanAksesDitolak %></span>
-      <a href="/login?ganti=1" class="px-3.5 py-1.5 rounded-xl bg-stone-900 text-white text-xs font-semibold">
+      <a href="/portal-internal?ganti=1&role=pemilik" class="px-3.5 py-1.5 rounded-xl bg-stone-900 text-white text-xs font-semibold">
         Masuk Akun Pemilik
       </a>
     </div>
@@ -131,53 +131,67 @@
             <% } %>
           </div>
 
-          <!-- Tombol Aksi Sentuh Super Besar (Kitchen Friendly) -->
-          <div class="p-4 bg-stone-50 border-t border-stone-100 flex items-center gap-2">
-            <% if (pesanan.status === 'Menunggu Konfirmasi') { %>
+          <!-- Tombol Aksi Sentuh Super Besar (Kitchen Friendly) + Tombol Batalkan & Restore Stok -->
+          <div class="p-4 bg-stone-50 border-t border-stone-100 space-y-2">
+            <div class="flex items-center gap-2">
+              <% if (pesanan.status === 'Menunggu Konfirmasi') { %>
+                <button
+                  type="button"
+                  data-aksi-status="Sedang Diproses"
+                  data-kode="<%= pesanan.nomorAntrean %>"
+                  class="flex-1 py-3.5 px-4 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>🔥 Mulai Masak</span>
+                </button>
+              <% } %>
+
               <button
                 type="button"
-                data-aksi-status="Sedang Diproses"
+                data-aksi-status="Siap Diantar"
                 data-kode="<%= pesanan.nomorAntrean %>"
-                class="flex-1 py-3.5 px-4 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                class="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <span>🔥 Mulai Masak</span>
+                <span>✅ Siap Diantar</span>
               </button>
-            <% } %>
+            </div>
 
             <button
               type="button"
-              data-aksi-status="Siap Diantar"
+              data-aksi-status="Dibatalkan"
               data-kode="<%= pesanan.nomorAntrean %>"
-              class="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+              class="w-full py-2 px-3 bg-white hover:bg-red-50 border border-red-200 text-red-600 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer"
             >
-              <span>✅ Siap Diantar</span>
+              <span>❌ Batalkan Pesanan (Kembalikan Stok)</span>
             </button>
           </div>
         </article>
       <% }); %>
     </div>
 
-    <!-- Riwayat Selesai Ringkas di Bawah Antrean -->
+    <!-- Riwayat Selesai / Dibatalkan Ringkas di Bawah Antrean -->
     <div class="bg-white rounded-3xl border border-stone-200/90 p-5 shadow-xs space-y-3">
       <div class="flex items-center justify-between border-b border-stone-100 pb-3">
         <h3 class="text-sm font-bold text-stone-900">
-          Pesanan yang Baru Selesai Diantar
+          Riwayat Pesanan Selesai &amp; Dibatalkan
         </h3>
         <span id="badge-total-selesai" class="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg">
-          <%= riwayatSelesai.length %> Selesai
+          <%= riwayatSelesai.length %> Riwayat
         </span>
       </div>
 
       <div id="kontainer-riwayat-selesai" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
         <% riwayatSelesai.slice(0, 6).forEach(function(p) { %>
-          <div class="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between text-xs">
+          <% const isBatal = p.status === 'Dibatalkan'; %>
+          <div class="p-3 rounded-xl border flex items-center justify-between text-xs <%= isBatal ? 'bg-red-50/40 border-red-200' : 'bg-stone-50 border-stone-200' %>">
             <div>
               <span class="font-bold text-stone-900">Meja <%= p.nomorMeja %></span> &middot; <span class="font-mono text-stone-500"><%= p.nomorAntrean %></span>
               <p class="text-[11px] text-stone-500 truncate max-w-xs mt-0.5">
                 <%= p.items.map(i => `${i.qty}x ${i.nama}`).join(', ') %>
               </p>
             </div>
-            <span class="text-emerald-700 font-bold text-[11px] bg-emerald-50 px-2 py-0.5 rounded">Selesai</span>
+            <span class="font-bold text-[11px] px-2 py-0.5 rounded <%= isBatal ? 'text-red-700 bg-red-100' : 'text-emerald-700 bg-emerald-50' %>">
+              <%= isBatal ? 'Dibatalkan' : 'Selesai' %>
+            </span>
           </div>
         <% }); %>
       </div>
@@ -209,6 +223,10 @@
             type="text"
             id="tambah-nama"
             required
+            minlength="3"
+            maxlength="100"
+            pattern="^(?=.*[A-Za-z])[A-Za-z0-9\s&().,'\-]+$"
+            title="Nama menu wajib mengandung huruf (minimal 3 karakter)"
             placeholder="Contoh: Kopi Tubruk Gayo"
             class="w-full px-3.5 py-2 text-xs bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:outline-none focus:border-stone-900"
           />
@@ -414,6 +432,10 @@
           type="text"
           id="edit-nama"
           required
+          minlength="3"
+          maxlength="100"
+          pattern="^(?=.*[A-Za-z])[A-Za-z0-9\s&().,'\-]+$"
+          title="Nama menu wajib mengandung huruf (minimal 3 karakter)"
           class="w-full px-3.5 py-2 text-xs bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:outline-none focus:border-stone-900"
         />
       </div>
@@ -642,13 +664,19 @@
       }
     });
 
-    // Aksi Klik Status Dapur (Mulai Masak / Siap Diantar)
+    // Aksi Klik Status Dapur (Mulai Masak / Siap Diantar / Batalkan)
     kontainerAntrean.addEventListener('click', async (e) => {
       const btn = e.target.closest('[data-aksi-status]');
       if (!btn) return;
 
       const kode = btn.getAttribute('data-kode');
       const statusBaru = btn.getAttribute('data-aksi-status');
+
+      if (statusBaru === 'Dibatalkan') {
+        if (!confirm(`Batalkan pesanan ${kode} dan kembalikan kuota stok porsi ke semula?`)) {
+          return;
+        }
+      }
 
       const res = await fetch(`/api/pesanan/${kode}/status`, {
         method: 'PATCH',
@@ -839,10 +867,11 @@
 
         if (Array.isArray(data.semuaMenu)) {
           statTotalMenu.textContent = data.semuaMenu.length;
+          renderGridMenuStaf(data.semuaMenu);
         }
 
         if (Array.isArray(data.riwayatSelesai)) {
-          badgeTotalSelesai.textContent = `${data.riwayatSelesai.length} Selesai`;
+          badgeTotalSelesai.textContent = `${data.riwayatSelesai.length} Riwayat`;
           renderRiwayatSelesai(data.riwayatSelesai);
         }
       } catch (err) {}
@@ -886,9 +915,14 @@
               ${pesanan.catatan && pesanan.catatan !== '-' ? `<div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 mt-2"><strong>Catatan Khusus:</strong> ${escapeHtml(pesanan.catatan)}</div>` : ''}
             </div>
 
-            <div class="p-4 bg-stone-50 border-t border-stone-100 flex items-center gap-2">
-              ${pesanan.status === 'Menunggu Konfirmasi' ? `<button type="button" data-aksi-status="Sedang Diproses" data-kode="${escapeHtml(pesanan.nomorAntrean)}" class="flex-1 py-3.5 px-4 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"><span>🔥 Mulai Masak</span></button>` : ''}
-              <button type="button" data-aksi-status="Siap Diantar" data-kode="${escapeHtml(pesanan.nomorAntrean)}" class="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"><span>✅ Siap Diantar</span></button>
+            <div class="p-4 bg-stone-50 border-t border-stone-100 space-y-2">
+              <div class="flex items-center gap-2">
+                ${pesanan.status === 'Menunggu Konfirmasi' ? `<button type="button" data-aksi-status="Sedang Diproses" data-kode="${escapeHtml(pesanan.nomorAntrean)}" class="flex-1 py-3.5 px-4 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"><span>🔥 Mulai Masak</span></button>` : ''}
+                <button type="button" data-aksi-status="Siap Diantar" data-kode="${escapeHtml(pesanan.nomorAntrean)}" class="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"><span>✅ Siap Diantar</span></button>
+              </div>
+              <button type="button" data-aksi-status="Dibatalkan" data-kode="${escapeHtml(pesanan.nomorAntrean)}" class="w-full py-2 px-3 bg-white hover:bg-red-50 border border-red-200 text-red-600 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer">
+                <span>❌ Batalkan Pesanan (Kembalikan Stok)</span>
+              </button>
             </div>
           </article>
         `;
@@ -896,15 +930,20 @@
     }
 
     function renderRiwayatSelesai(riwayat) {
-      kontainerRiwayat.innerHTML = riwayat.slice(0, 6).map(p => `
-        <div class="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between text-xs">
-          <div>
-            <span class="font-bold text-stone-900">Meja ${escapeHtml(p.nomorMeja)}</span> &middot; <span class="font-mono text-stone-500">${escapeHtml(p.nomorAntrean)}</span>
-            <p class="text-[11px] text-stone-500 truncate max-w-xs mt-0.5">${p.items.map(i => `${i.qty}x ${escapeHtml(i.nama)}`).join(', ')}</p>
+      kontainerRiwayat.innerHTML = riwayat.slice(0, 6).map(p => {
+        const isBatal = p.status === 'Dibatalkan';
+        return `
+          <div class="p-3 rounded-xl border flex items-center justify-between text-xs ${isBatal ? 'bg-red-50/40 border-red-200' : 'bg-stone-50 border-stone-200'}">
+            <div>
+              <span class="font-bold text-stone-900">Meja ${escapeHtml(p.nomorMeja)}</span> &middot; <span class="font-mono text-stone-500">${escapeHtml(p.nomorAntrean)}</span>
+              <p class="text-[11px] text-stone-500 truncate max-w-xs mt-0.5">${p.items.map(i => `${i.qty}x ${escapeHtml(i.nama)}`).join(', ')}</p>
+            </div>
+            <span class="font-bold text-[11px] px-2 py-0.5 rounded ${isBatal ? 'text-red-700 bg-red-100' : 'text-emerald-700 bg-emerald-50'}">
+              ${isBatal ? 'Dibatalkan' : 'Selesai'}
+            </span>
           </div>
-          <span class="text-emerald-700 font-bold text-[11px] bg-emerald-50 px-2 py-0.5 rounded">Selesai</span>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     setInterval(muatSinkronisasiDapur, 3000);

@@ -58,6 +58,84 @@
     </div>
   </div>
 
+  <!-- Panel Kontrol Operasional Toko (Buka / Tutup Toko & Jam Operasional) -->
+  <div class="bg-white rounded-3xl border border-stone-200/90 p-5 sm:p-6 shadow-xs space-y-4 no-print">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div class="flex items-start gap-3">
+        <span
+          id="badge-icon-toko"
+          class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shrink-0 <%= statusToko.sedangBuka ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800' %>"
+        >
+          <%= statusToko.sedangBuka ? '🟢' : '🔴' %>
+        </span>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm sm:text-base font-bold text-stone-900">
+              Status Operasional Kedai:
+              <span id="teks-status-toko" class="<%= statusToko.sedangBuka ? 'text-emerald-700' : 'text-red-600' %>">
+                <%= statusToko.sedangBuka ? 'SEDANG BUKA' : 'SEDANG TUTUP' %>
+              </span>
+            </h2>
+            <span id="pill-mode-toko" class="text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-stone-100 text-stone-700">
+              Mode: <%= statusToko.modeOperasional %>
+            </span>
+            <span id="badge-jam-server" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900">
+              Jam Server: <%= statusToko.jamSekarang %> WIB
+            </span>
+          </div>
+          <p id="alasan-status-toko" class="text-xs text-stone-500 mt-0.5">
+            <%= statusToko.alasan %>
+          </p>
+        </div>
+      </div>
+
+      <!-- Form Pengaturan Jam Buka/Tutup & Tombol Setel Tutup/Buka -->
+      <div class="flex flex-wrap items-end gap-2.5">
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-stone-500 mb-1">Jam Buka</label>
+          <input
+            type="time"
+            id="input-jam-buka"
+            value="<%= statusToko.jamBuka %>"
+            class="px-3 py-1.5 text-xs font-bold bg-stone-50 border border-stone-300 rounded-xl"
+          />
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-stone-500 mb-1">Jam Tutup</label>
+          <input
+            type="time"
+            id="input-jam-tutup"
+            value="<%= statusToko.jamTutup %>"
+            class="px-3 py-1.5 text-xs font-bold bg-stone-50 border border-stone-300 rounded-xl"
+          />
+        </div>
+        <button
+          type="button"
+          id="btn-simpan-jam"
+          class="px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold cursor-pointer"
+        >
+          Set Jam (Auto)
+        </button>
+
+        <button
+          type="button"
+          id="btn-tutup-paksa"
+          class="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold cursor-pointer"
+        >
+          🔒 Tutup Toko Sekarang
+        </button>
+
+        <button
+          type="button"
+          id="btn-buka-paksa"
+          class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
+        >
+          🔓 Buka Toko Sekarang
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- 4 Kartu Metrik Kinerja Harian -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     <!-- Menu Terlaris -->
@@ -252,12 +330,69 @@
       return 'Rp ' + (Number(angka) || 0).toLocaleString('id-ID');
     }
 
+    function updateUiStatusToko(st) {
+      if (!st) return;
+      const badgeIcon = document.getElementById('badge-icon-toko');
+      const teksStatus = document.getElementById('teks-status-toko');
+      const pillMode = document.getElementById('pill-mode-toko');
+      const badgeJam = document.getElementById('badge-jam-server');
+      const alasanEl = document.getElementById('alasan-status-toko');
+
+      if (st.sedangBuka) {
+        badgeIcon.className = 'w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shrink-0 bg-emerald-100 text-emerald-800';
+        badgeIcon.textContent = '🟢';
+        teksStatus.className = 'text-emerald-700';
+        teksStatus.textContent = 'SEDANG BUKA';
+      } else {
+        badgeIcon.className = 'w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shrink-0 bg-red-100 text-red-800';
+        badgeIcon.textContent = '🔴';
+        teksStatus.className = 'text-red-600';
+        teksStatus.textContent = 'SEDANG TUTUP';
+      }
+      pillMode.textContent = `Mode: ${st.modeOperasional}`;
+      if (badgeJam && st.jamSekarang) badgeJam.textContent = `Jam Server: ${st.jamSekarang} WIB`;
+      alasanEl.textContent = st.alasan;
+    }
+
+    async function kirimPengaturanToko(payload) {
+      try {
+        const res = await fetch('/api/toko/status', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.sukses) {
+          updateUiStatusToko(data.statusToko);
+        }
+      } catch (e) {}
+    }
+
+    document.getElementById('btn-simpan-jam').addEventListener('click', () => {
+      const jamBuka = document.getElementById('input-jam-buka').value;
+      const jamTutup = document.getElementById('input-jam-tutup').value;
+      kirimPengaturanToko({ modeOperasional: 'AUTO', jamBuka, jamTutup });
+    });
+
+    document.getElementById('btn-tutup-paksa').addEventListener('click', () => {
+      const jamBuka = document.getElementById('input-jam-buka').value;
+      const jamTutup = document.getElementById('input-jam-tutup').value;
+      kirimPengaturanToko({ modeOperasional: 'FORCE_CLOSED', jamBuka, jamTutup });
+    });
+
+    document.getElementById('btn-buka-paksa').addEventListener('click', () => {
+      const jamBuka = document.getElementById('input-jam-buka').value;
+      const jamTutup = document.getElementById('input-jam-tutup').value;
+      kirimPengaturanToko({ modeOperasional: 'FORCE_OPEN', jamBuka, jamTutup });
+    });
+
     // Polling Real-Time Sinkronisasi Dashboard Pemilik
     setInterval(async () => {
       try {
         const res = await fetch('/api/sinkronisasi', { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
+        if (data.statusToko) updateUiStatusToko(data.statusToko);
         const peringkat = data.peringkatMenu || [];
         if (peringkat.length === 0) return;
 

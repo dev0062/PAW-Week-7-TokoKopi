@@ -11,6 +11,24 @@
 
 <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 pb-28 space-y-6">
 
+  <!-- Banner Peringatan Jika Toko Sedang Tutup (Manual oleh Pemilik atau Lewat Jam Tutup) -->
+  <div
+    id="banner-toko-tutup"
+    class="<%= (typeof statusToko !== 'undefined' && !statusToko.sedangBuka) ? '' : 'hidden' %> rounded-2xl bg-red-600 text-white p-4 sm:p-5 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+  >
+    <div class="space-y-1">
+      <div class="flex items-center gap-2 font-extrabold text-sm sm:text-base">
+        <span>🔒 PENERIMAAN PESANAN SEDANG DITUTUP</span>
+      </div>
+      <p id="teks-alasan-tutup" class="text-xs sm:text-sm text-red-100 leading-relaxed">
+        <%= (typeof statusToko !== 'undefined') ? statusToko.alasan : 'Toko sedang tutup.' %>
+      </p>
+    </div>
+    <span class="shrink-0 px-3 py-1.5 rounded-xl bg-red-800/80 text-white text-xs font-bold font-mono">
+      Jam Operasional: <%= appConfig.jamOperasional %>
+    </span>
+  </div>
+
   <!-- Header Info Meja Ringkas -->
   <div class="bg-white rounded-2xl border border-stone-200/90 p-4 shadow-xs flex items-center justify-between gap-3">
     <div class="flex items-center gap-3">
@@ -374,6 +392,86 @@
   </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL KONFIRMASI PESANAN & NOMOR MEJA (Mencegah Salah Meja & Salah Pesan) -->
+<!-- ========================================================================= -->
+<div
+  id="modal-konfirmasi-pesanan"
+  class="hidden fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-center justify-center p-4"
+>
+  <div class="bg-white w-full max-w-md rounded-3xl border border-stone-200 shadow-2xl overflow-hidden">
+    <div class="px-5 py-4 bg-stone-900 text-white flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-bold">Konfirmasi Nomor Meja &amp; Pesanan</h3>
+        <p class="text-[11px] text-stone-300">Pastikan nomor meja dan menu sudah benar sebelum dikirim ke dapur</p>
+      </div>
+      <button type="button" id="btn-tutup-konfirmasi" class="text-stone-300 hover:text-white text-sm font-bold cursor-pointer">
+        ✕
+      </button>
+    </div>
+
+    <div class="p-5 space-y-4">
+      <div class="grid grid-cols-2 gap-3 bg-stone-50 p-3.5 rounded-2xl border border-stone-200">
+        <div>
+          <label class="block text-[11px] font-bold text-stone-600 mb-1">Nama Pemesan</label>
+          <input
+            type="text"
+            id="konfirmasi-nama-pelanggan"
+            required
+            minlength="2"
+            maxlength="60"
+            pattern="^[A-Za-z\s.'\-]+$"
+            oninput="this.value = this.value.replace(/[0-9]/g, '')"
+            value="<%= namaPelangganAktif %>"
+            class="w-full px-3 py-1.5 text-xs font-bold bg-white border border-stone-300 rounded-xl focus:outline-none focus:border-stone-900"
+          />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-stone-600 mb-1">Pastikan Nomor Meja</label>
+          <select
+            id="konfirmasi-nomor-meja"
+            class="w-full px-3 py-1.5 text-xs font-bold bg-white border border-stone-300 rounded-xl focus:outline-none focus:border-stone-900"
+          >
+            <% for (let m = 1; m <= appConfig.jumlahMeja; m++) { %>
+              <% const kodeMeja = String(m).padStart(2, '0'); %>
+              <option value="<%= kodeMeja %>" <%= kodeMeja === String(nomorMeja).padStart(2, '0') ? 'selected' : '' %>>
+                Meja <%= kodeMeja %>
+              </option>
+            <% } %>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-xs font-bold text-stone-700 mb-2">Rincian Menu yang Akan Dimasak:</p>
+        <div id="konfirmasi-daftar-item" class="max-h-44 overflow-y-auto space-y-1.5 pr-1"></div>
+      </div>
+
+      <div class="pt-2 border-t border-stone-200 flex items-center justify-between text-sm">
+        <span class="font-semibold text-stone-600">Total Pembayaran</span>
+        <span id="konfirmasi-total-harga" class="font-extrabold text-stone-900 text-base">Rp 0</span>
+      </div>
+
+      <div class="pt-1 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          id="btn-batal-konfirmasi"
+          class="px-4 py-2.5 rounded-xl border border-stone-300 text-stone-700 text-xs font-semibold hover:bg-stone-100 cursor-pointer"
+        >
+          Periksa Lagi
+        </button>
+        <button
+          type="button"
+          id="btn-setuju-kirim-pesanan"
+          class="px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold cursor-pointer shadow-xs"
+        >
+          Ya, Meja &amp; Pesanan Sudah Benar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <%- include('partials/footer', { appConfig }) %>
 
 <script>
@@ -405,6 +503,8 @@
 
     const nomorMejaAktif = '<%= nomorMeja %>';
     const namaPelangganAktif = '<%= namaPelangganAktif %>';
+    let tokoSedangBuka = <%= (typeof statusToko !== 'undefined' && !statusToko.sedangBuka) ? 'false' : 'true' %>;
+    let pesanAlasanTutup = `<%= (typeof statusToko !== 'undefined') ? statusToko.alasan : '' %>`;
     let kategoriAktif = 'Semua';
     const keranjangMeja = new Map();
     const statusAntreanTerakhir = new Map();
@@ -639,6 +739,15 @@
     });
 
     function tambahMenuKePesanan({ id, nama, harga, stokMaks, gambar }) {
+      if (!tokoSedangBuka) {
+        bukaAsisten();
+        tambahPesanChat({
+          pengirim: 'asisten',
+          teksUtama: `🔒 **Pemesanan Ditutup**: ${pesanAlasanTutup || 'Saat ini toko sedang tutup dan tidak menerima pesanan baru.'}`
+        });
+        return;
+      }
+
       const numId = Number(id);
       const itemLama = keranjangMeja.get(numId);
       const qtySekarang = itemLama ? itemLama.qty : 0;
@@ -769,23 +878,75 @@
       }
     });
 
-    btnKirimPesanan.addEventListener('click', async () => {
+    btnKirimPesanan.addEventListener('click', () => {
+      if (!tokoSedangBuka) {
+        bukaAsisten();
+        tambahPesanChat({
+          pengirim: 'asisten',
+          teksUtama: `🔒 **Pemesanan Ditutup**: ${pesanAlasanTutup || 'Saat ini toko sedang tutup dan tidak menerima pesanan baru.'}`
+        });
+        return;
+      }
+
+      const items = Array.from(keranjangMeja.values());
+      if (items.length === 0) return;
+
+      // Isi rincian ke dalam Modal Konfirmasi Meja & Pesanan
+      const listKonfirmasiEl = document.getElementById('konfirmasi-daftar-item');
+      const totalKonfirmasiEl = document.getElementById('konfirmasi-total-harga');
+      let totalRp = 0;
+
+      listKonfirmasiEl.innerHTML = items
+        .map((i) => {
+          const sub = i.harga * i.qty;
+          totalRp += sub;
+          return `
+            <div class="flex items-center justify-between text-xs bg-stone-50 px-3 py-2 rounded-xl border border-stone-200/80">
+              <span class="font-semibold text-stone-800">${i.qty}x ${escapeHtml(i.nama)}</span>
+              <span class="font-bold text-stone-900">${formatRupiahClient(sub)}</span>
+            </div>
+          `;
+        })
+        .join('');
+
+      totalKonfirmasiEl.textContent = formatRupiahClient(totalRp);
+      document.getElementById('modal-konfirmasi-pesanan').classList.remove('hidden');
+    });
+
+    function tutupModalKonfirmasi() {
+      document.getElementById('modal-konfirmasi-pesanan').classList.add('hidden');
+    }
+    document.getElementById('btn-tutup-konfirmasi').addEventListener('click', tutupModalKonfirmasi);
+    document.getElementById('btn-batal-konfirmasi').addEventListener('click', tutupModalKonfirmasi);
+
+    document.getElementById('btn-setuju-kirim-pesanan').addEventListener('click', async () => {
       const items = Array.from(keranjangMeja.values()).map((i) => ({
         menuId: i.menuId,
         qty: i.qty
       }));
       if (items.length === 0) return;
 
-      btnKirimPesanan.disabled = true;
-      btnKirimPesanan.textContent = 'Mengirim ke Dapur...';
+      const mejaTerkonfirmasi = document.getElementById('konfirmasi-nomor-meja').value || nomorMejaAktif;
+      const namaTerkonfirmasi = document.getElementById('konfirmasi-nama-pelanggan').value.trim();
+      const regexNamaValid = /^[a-zA-Z\s.'-]+$/;
+
+      if (!namaTerkonfirmasi || namaTerkonfirmasi.length < 2 || !regexNamaValid.test(namaTerkonfirmasi)) {
+        alert('Nama pemesan wajib menggunakan huruf saja (minimal 2 huruf, tidak boleh angka atau simbol).');
+        return;
+      }
+
+      const btnSetuju = document.getElementById('btn-setuju-kirim-pesanan');
+
+      btnSetuju.disabled = true;
+      btnSetuju.textContent = 'Mengirim ke Dapur...';
 
       try {
         const res = await fetch('/api/pesanan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            nomorMeja: nomorMejaAktif,
-            namaPelanggan: namaPelangganAktif,
+            nomorMeja: mejaTerkonfirmasi,
+            namaPelanggan: namaTerkonfirmasi,
             items,
             catatan: inputCatatanDapur.value.trim(),
             sumberPesan: 'Pemesanan Meja'
@@ -793,13 +954,14 @@
         });
 
         const data = await res.json();
+        tutupModalKonfirmasi();
 
         if (!res.ok || !data.sukses) {
           bukaAsisten();
           tambahPesanChat({
             pengirim: 'asisten',
             teksUtama: data.pesanError || 'Gagal memproses pesanan.',
-            subTeks: 'Berikut rekomendasi menu terlaris yang masih ada stoknya:',
+            subTeks: data.rekomendasiPengganti ? 'Berikut rekomendasi menu terlaris yang masih ada stoknya:' : '',
             rekomendasiMenu: data.rekomendasiPengganti || []
           });
         } else {
@@ -813,13 +975,15 @@
 
           tambahPesanChat({
             pengirim: 'asisten',
-            teksUtama: `Pesanan **${p.nomorAntrean}** berhasil dikirim ke dapur (${p.totalPorsi} porsi).`,
+            teksUtama: `Pesanan **${p.nomorAntrean}** untuk **Meja ${p.nomorMeja}** berhasil dikirim ke dapur (${p.totalPorsi} porsi).`,
             subTeks: 'Anda akan menerima pemberitahuan otomatis di sini saat makanan siap diantar.'
           });
         }
       } catch (err) {
         alert('Terjadi kesalahan jaringan.');
       } finally {
+        btnSetuju.disabled = false;
+        btnSetuju.textContent = 'Ya, Meja & Pesanan Sudah Benar';
         btnKirimPesanan.textContent = 'Kirim Pesanan ke Dapur';
         renderKeranjangMeja();
       }
@@ -833,6 +997,8 @@
           ? 'bg-emerald-100 text-emerald-900'
           : p.status === 'Sedang Diproses'
           ? 'bg-amber-100 text-amber-900'
+          : p.status === 'Dibatalkan'
+          ? 'bg-red-100 text-red-800'
           : 'bg-stone-200 text-stone-800';
 
       const htmlKartu = `
@@ -894,6 +1060,25 @@
         const res = await fetch('/api/sinkronisasi', { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
+
+        // Sinkronisasi Status Buka/Tutup Toko Real-Time
+        if (data.statusToko) {
+          tokoSedangBuka = Boolean(data.statusToko.sedangBuka);
+          pesanAlasanTutup = data.statusToko.alasan || '';
+          const bannerTutup = document.getElementById('banner-toko-tutup');
+          const teksAlasan = document.getElementById('teks-alasan-tutup');
+
+          if (!tokoSedangBuka) {
+            if (bannerTutup) bannerTutup.classList.remove('hidden');
+            if (teksAlasan) teksAlasan.textContent = pesanAlasanTutup;
+            btnKirimPesanan.disabled = true;
+            btnKirimPesanan.textContent = '🔒 Toko Sedang Tutup';
+          } else {
+            if (bannerTutup) bannerTutup.classList.add('hidden');
+            btnKirimPesanan.textContent = 'Kirim Pesanan ke Dapur';
+            renderKeranjangMeja();
+          }
+        }
 
         const gabunganPesanan = [
           ...(data.antreanAktif || []),
