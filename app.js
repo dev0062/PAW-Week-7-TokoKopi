@@ -89,7 +89,7 @@ async function startServer() {
     console.warn('[Sequelize] Peringatan koneksi PostgreSQL (pastikan DB_PASSWORD di .env sesuai pgAdmin):', dbErr.message);
   }
 
-  app.listen(appConfig.port, () => {
+  app.listen(appConfig.port, '0.0.0.0', () => {
     console.log('==============================================================');
     console.log(` ${appConfig.appName} ${appConfig.version} — ${appConfig.brandSubtitle}`);
     console.log(` Penulis PRD : ${appConfig.authorName} (${appConfig.authorNim})`);
@@ -97,6 +97,7 @@ async function startServer() {
     console.log('--------------------------------------------------------------');
     console.log(` [1. Link Customer Meja]      : http://localhost:${appConfig.port}/masuk-meja`);
     console.log(` [2. Link Pemilik & Staf]     : http://localhost:${appConfig.port}/portal-internal`);
+    console.log(` [Akses via HP (Wi-Fi Sama)]  : http://10.10.0.90:${appConfig.port}/masuk-meja`);
     console.log('==============================================================');
   });
 }

@@ -4,7 +4,7 @@
  * ============================================================================
  * Referensi PRD:
  * - Bagian 4 (Target User / Persona):
- *   1. Dev Yuftiana Ayyun (Pemilik) -> Mengakses Dashboard Laporan (/pemilik)
+ *   1. Dev Qurota Putra (Pemilik) -> Mengakses Dashboard Laporan (/pemilik)
  *      & memantau operasional stok/penjualan harian (US-02-1 s/d US-02-5).
  *   2. Nazhat Hafidz Al Jauzi (Staf Dapur) -> Mengakses Layar Antrean Dapur
  *      & Kelola Stok (/staf) (US-03-1 s/d US-03-5).
@@ -19,7 +19,7 @@ const daftarAkunInternal = [
     id: 1,
     username: 'pemilik',
     password: 'password123',
-    namaLengkap: 'Dev Yuftiana Ayyun',
+    namaLengkap: 'Dev Qurota Putra',
     jabatan: 'Pemilik Kedai (Owner)',
     role: 'pemilik',
     halamanUtama: '/pemilik'
