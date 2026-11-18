@@ -95,11 +95,8 @@ async function startServer() {
     console.log(` Penulis PRD : ${appConfig.authorName} (${appConfig.authorNim})`);
     console.log(` Server URL  : http://localhost:${appConfig.port}`);
     console.log('--------------------------------------------------------------');
-    console.log(` [Scope A] Meja Pelanggan (QR)      : http://localhost:${appConfig.port}/?meja=04`);
-    console.log(` [Portal]  Login Staf & Pemilik     : http://localhost:${appConfig.port}/login`);
-    console.log(` [Scope B] Layar Staf Dapur & Stok  : http://localhost:${appConfig.port}/staf`);
-    console.log(` [Scope C] Dashboard Laporan Pemilik: http://localhost:${appConfig.port}/pemilik`);
-    console.log(` [API CRUD] REST Endpoint Produk    : http://localhost:${appConfig.port}/api/produk`);
+    console.log(` [1. Link Customer Meja]      : http://localhost:${appConfig.port}/masuk-meja`);
+    console.log(` [2. Link Pemilik & Staf]     : http://localhost:${appConfig.port}/portal-internal`);
     console.log('==============================================================');
   });
 }

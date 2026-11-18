@@ -18,11 +18,17 @@ const authController = require('../controllers/authController');
 const { requirePelanggan, requireRole } = require('../middlewares/authMiddleware');
 
 // ============================================================================
-// 1. ROUTE AUTENTIKASI (LOGIN & LOGOUT)
+// 1. DUA LINK UTAMA AUTENTIKASI TERPISAH (CUSTOMER MEJA vs INTERNAL STAF/PEMILIK)
 // ============================================================================
-router.get('/login', authController.renderHalamanLogin);
+// Link 1: Khusus Pelanggan Meja (Customer) -> /masuk-meja
+router.get('/masuk-meja', authController.renderHalamanMasukPelanggan);
 router.post('/auth/login-pelanggan', authController.prosesLoginPelanggan);
+
+// Link 2: Khusus Pegawai Internal (Pemilik & Staf Dapur) -> /portal-internal
+router.get('/portal-internal', authController.renderHalamanLoginInternal);
 router.post('/auth/login-internal', authController.prosesLoginInternal);
+
+// Logout
 router.get('/logout', authController.prosesLogout);
 router.post('/auth/logout', authController.prosesLogout);
 
@@ -84,7 +90,12 @@ router.post(
   apiController.postTambahMenuBaru
 );
 
-// API Laporan Pemilik
+// API Laporan & Kontrol Operasional Toko oleh Pemilik
+router.patch(
+  '/api/toko/status',
+  requireRole(['pemilik']),
+  apiController.patchPengaturanToko
+);
 router.get(
   '/api/laporan/export-csv',
   requireRole(['pemilik']),

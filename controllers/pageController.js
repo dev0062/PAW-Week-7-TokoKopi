@@ -50,6 +50,7 @@ async function renderHalamanPelanggan(req, res, next) {
     res.render('pelanggan', {
       halamanAktif: 'pelanggan',
       appConfig,
+      statusToko: appConfig.getStatusToko(),
       nomorMeja,
       namaPelangganAktif,
       semuaMenu,
@@ -134,6 +135,7 @@ async function renderHalamanPemilik(req, res, next) {
     res.render('pemilik', {
       halamanAktif: 'pemilik',
       appConfig,
+      statusToko: appConfig.getStatusToko(),
       filterWaktu,
       tanggalLaporan: formatTanggalLaporan(new Date()),
       peringkatMenu,

@@ -74,21 +74,52 @@ async function getProdukById(req, res, next) {
 async function createProduk(req, res, next) {
   try {
     const { nama, kategori, harga, deskripsi, stok, stokAwal, gambar } = req.body;
+    const namaBersih = String(nama || '').trim();
 
-    if (!nama || String(nama).trim().length < 2) {
+    // Validasi 1: Nama menu minimal 3 karakter, maksimal 100 karakter, dan wajib mengandung huruf (bukan hanya angka)
+    const regexNamaMenu = /^(?=.*[a-zA-Z])[a-zA-Z0-9\s&().,'-]+$/;
+    if (!namaBersih || namaBersih.length < 3 || namaBersih.length > 100 || !regexNamaMenu.test(namaBersih)) {
       return res.status(400).json({
         sukses: false,
-        pesanError: 'Nama menu/produk wajib diisi (minimal 2 karakter).'
+        pesanError: 'Nama menu wajib diisi minimal 3 karakter dan harus mengandung huruf (tidak boleh hanya angka atau simbol aneh).'
+      });
+    }
+
+    // Validasi 2: Harga harus angka bulat antara Rp 1.000 s/d Rp 1.000.000
+    const angkaHarga = Number(harga);
+    if (harga === undefined || Number.isNaN(angkaHarga) || angkaHarga < 1000 || angkaHarga > 1000000) {
+      return res.status(400).json({
+        sukses: false,
+        pesanError: 'Harga menu tidak valid. Masukkan angka antara Rp 1.000 sampai Rp 1.000.000.'
+      });
+    }
+
+    // Validasi 3: Stok harus angka bulat antara 0 s/d 500 porsi
+    const rawStok = stok !== undefined ? stok : stokAwal;
+    const angkaStok = Number(rawStok !== undefined ? rawStok : 20);
+    if (Number.isNaN(angkaStok) || !Number.isInteger(angkaStok) || angkaStok < 0 || angkaStok > 500) {
+      return res.status(400).json({
+        sukses: false,
+        pesanError: 'Stok porsi tidak valid. Masukkan angka bulat antara 0 sampai 500 porsi.'
+      });
+    }
+
+    // Validasi 4: Kategori wajib termasuk dalam daftar kategori resmi jika dikirim
+    const kategoriResmi = menuModel.getKategoriList();
+    if (kategori !== undefined && !kategoriResmi.includes(kategori)) {
+      return res.status(400).json({
+        sukses: false,
+        pesanError: `Kategori tidak valid. Pilihan yang tersedia: ${kategoriResmi.join(', ')}.`
       });
     }
 
     const menuBaru = await menuModel.createInDb({
-      nama,
+      nama: namaBersih,
       kategori,
-      harga,
+      harga: angkaHarga,
       deskripsi,
-      stok: stok !== undefined ? stok : stokAwal,
-      stokAwal: stokAwal !== undefined ? stokAwal : stok,
+      stok: angkaStok,
+      stokAwal: angkaStok,
       gambar
     });
 
@@ -112,6 +143,49 @@ async function updateProduk(req, res, next) {
   try {
     const { id } = req.params;
     const { nama, kategori, harga, deskripsi, stok, stokAwal, gambar } = req.body;
+
+    // Validasi Nama Menu jika diubah
+    if (nama !== undefined) {
+      const namaBersih = String(nama).trim();
+      const regexNamaMenu = /^(?=.*[a-zA-Z])[a-zA-Z0-9\s&().,'-]+$/;
+      if (namaBersih.length < 3 || namaBersih.length > 100 || !regexNamaMenu.test(namaBersih)) {
+        return res.status(400).json({
+          sukses: false,
+          pesanError: 'Nama menu harus minimal 3 karakter dan wajib mengandung huruf (tidak boleh hanya angka).'
+        });
+      }
+    }
+
+    // Validasi Harga jika diubah
+    if (harga !== undefined) {
+      const angkaHarga = Number(harga);
+      if (Number.isNaN(angkaHarga) || angkaHarga < 1000 || angkaHarga > 1000000) {
+        return res.status(400).json({
+          sukses: false,
+          pesanError: 'Harga menu tidak valid. Masukkan angka antara Rp 1.000 sampai Rp 1.000.000.'
+        });
+      }
+    }
+
+    // Validasi Stok jika diubah
+    if (stok !== undefined) {
+      const angkaStok = Number(stok);
+      if (Number.isNaN(angkaStok) || !Number.isInteger(angkaStok) || angkaStok < 0 || angkaStok > 500) {
+        return res.status(400).json({
+          sukses: false,
+          pesanError: 'Stok porsi tidak valid. Masukkan angka bulat antara 0 sampai 500 porsi.'
+        });
+      }
+    }
+
+    // Validasi Kategori jika diubah
+    const kategoriResmi = menuModel.getKategoriList();
+    if (kategori !== undefined && !kategoriResmi.includes(kategori)) {
+      return res.status(400).json({
+        sukses: false,
+        pesanError: `Kategori tidak valid. Pilihan yang tersedia: ${kategoriResmi.join(', ')}.`
+      });
+    }
 
     const menuDiperbarui = await menuModel.updateInDb(id, {
       nama,
@@ -371,6 +445,7 @@ async function getSinkronisasiData(req, res, next) {
     res.status(200).json({
       sukses: true,
       waktuServer: new Date().toISOString(),
+      statusToko: appConfig.getStatusToko(),
       antreanAktif,
       riwayatSelesai,
       semuaMenu,
@@ -380,6 +455,29 @@ async function getSinkronisasiData(req, res, next) {
   } catch (error) {
     next(error);
   }
+}
+
+/**
+ * PATCH /api/toko/status
+ * Pemilik mengatur status operasional toko:
+ * - modeOperasional: 'AUTO' (ikut jamBuka-jamTutup), 'FORCE_OPEN' (Buka Paksa), 'FORCE_CLOSED' (Tutup Paksa)
+ * - jamBuka & jamTutup: Jam operasional toko (misal "09:00" s/d "22:00")
+ */
+function patchPengaturanToko(req, res) {
+  const { modeOperasional, jamBuka, jamTutup } = req.body || {};
+  const statusBaru = appConfig.updatePengaturanToko({
+    modeOperasional,
+    jamBuka,
+    jamTutup
+  });
+
+  return res.status(200).json({
+    sukses: true,
+    pesan: statusBaru.sedangBuka
+      ? `Status Toko diperbarui: BUKA (${statusBaru.jamOperasional}).`
+      : `Status Toko diperbarui: TUTUP (${statusBaru.alasan}).`,
+    statusToko: statusBaru
+  });
 }
 
 /**
@@ -462,6 +560,7 @@ module.exports = {
   postTambahMenuBaru,
   patchStatusPesananDapur,
   getSinkronisasiData,
+  patchPengaturanToko,
   getExportLaporanCsv,
   getStatusSistem
 };

@@ -9,6 +9,7 @@
 
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
+const appConfig = require('../config/appConfig');
 const menuModel = require('./menuModel');
 
 // ============================================================================
@@ -234,12 +235,41 @@ async function buatPesananBaru({
   catatan = '',
   sumberPesan = 'Chatbot Meja'
 }) {
-  const mejaBersih = String(nomorMeja || '').trim().padStart(2, '0');
-  const angkaMeja = Number(mejaBersih);
-  if (!angkaMeja || angkaMeja < 1 || angkaMeja > 50) {
+  // Validasi Status Operasional Toko (Buka / Tutup oleh Pemilik atau Jam Tutup)
+  const statusToko = appConfig.getStatusToko();
+  if (!statusToko.sedangBuka) {
     return {
       sukses: false,
-      pesanError: 'Nomor meja tidak valid. Pastikan Anda memilih nomor meja tempat Anda duduk saat ini.'
+      tokoTutup: true,
+      pesanError: statusToko.alasan
+    };
+  }
+
+  const mejaBersih = String(nomorMeja || '').trim().padStart(2, '0');
+  const angkaMeja = Number(mejaBersih);
+  if (!Number.isInteger(angkaMeja) || angkaMeja < 1 || angkaMeja > appConfig.jumlahMeja) {
+    return {
+      sukses: false,
+      pesanError: `Nomor meja tidak valid. Pilih nomor meja antara 01 sampai ${appConfig.jumlahMeja}.`
+    };
+  }
+
+  // Validasi Nama Pelanggan: Wajib huruf (tidak boleh angka atau simbol aneh)
+  const namaBersih = String(namaPelanggan || '').trim();
+  const regexNamaValid = /^[a-zA-Z\s.'-]+$/;
+  if (!namaBersih || namaBersih.length < 2 || namaBersih.length > 60 || !regexNamaValid.test(namaBersih)) {
+    return {
+      sukses: false,
+      pesanError: 'Nama pemesan tidak valid. Gunakan huruf saja (minimal 2 huruf, tanpa angka atau simbol).'
+    };
+  }
+
+  // Validasi Catatan Dapur: Maksimal 200 karakter & tidak boleh tag HTML/script
+  const catatanBersih = String(catatan || '-').trim();
+  if (catatanBersih.length > 200 || /<[^>]*>/g.test(catatanBersih)) {
+    return {
+      sukses: false,
+      pesanError: 'Catatan pesanan maksimal 200 karakter dan tidak boleh mengandung tag HTML.'
     };
   }
 
@@ -297,13 +327,13 @@ async function buatPesananBaru({
 
 function getAntreanAktifFIFO() {
   return daftarPesanan
-    .filter((p) => p.status !== 'Siap Diantar')
+    .filter((p) => p.status === 'Menunggu Konfirmasi' || p.status === 'Sedang Diproses')
     .sort((a, b) => new Date(a.waktuPesan).getTime() - new Date(b.waktuPesan).getTime());
 }
 
 function getRiwayatPesananSelesai() {
   return daftarPesanan
-    .filter((p) => p.status === 'Siap Diantar')
+    .filter((p) => p.status === 'Siap Diantar' || p.status === 'Dibatalkan')
     .sort((a, b) => new Date(b.waktuUpdate).getTime() - new Date(a.waktuUpdate).getTime());
 }
 
@@ -328,17 +358,26 @@ async function updateStatusPesanan(nomorAntrean, statusBaru) {
   const pesanan = getPesananByNomorAntrean(nomorAntrean);
   if (!pesanan) return null;
 
-  const statusValid = ['Menunggu Konfirmasi', 'Sedang Diproses', 'Siap Diantar'];
+  const statusValid = ['Menunggu Konfirmasi', 'Sedang Diproses', 'Siap Diantar', 'Dibatalkan'];
   if (!statusValid.includes(statusBaru)) return null;
 
+  const statusSebelumnya = pesanan.status;
+
+  // Jika pesanan dibatalkan oleh Staf Dapur (dan sebelumnya belum dibatalkan), kembalikan stok menu ke semula!
+  if (statusBaru === 'Dibatalkan' && statusSebelumnya !== 'Dibatalkan') {
+    menuModel.kembalikanStokPesananBatal(pesanan.items);
+  }
+
   pesanan.status = statusBaru;
-  pesanan.terkonfirmasiMeja = true;
+  pesanan.terkonfirmasiMeja = statusBaru !== 'Dibatalkan';
   pesanan.waktuUpdate = new Date().toISOString();
 
   if (statusBaru === 'Sedang Diproses') {
     pesanan.notifikasiTerbaru = `Pembaruan Dapur: Pesanan ${pesanan.nomorAntrean} (Meja ${pesanan.nomorMeja}) telah dikonfirmasi staf dan sedang dimasak.`;
   } else if (statusBaru === 'Siap Diantar') {
     pesanan.notifikasiTerbaru = `Pesanan Siap: Pesanan ${pesanan.nomorAntrean} (Meja ${pesanan.nomorMeja}) sudah selesai dimasak dan sedang diantar ke meja Anda.`;
+  } else if (statusBaru === 'Dibatalkan') {
+    pesanan.notifikasiTerbaru = `Pesanan Dibatalkan: Pesanan ${pesanan.nomorAntrean} (Meja ${pesanan.nomorMeja}) telah dibatalkan oleh staf dapur dan kuota stok telah dikembalikan.`;
   }
 
   if (isOrderDbConnected) {

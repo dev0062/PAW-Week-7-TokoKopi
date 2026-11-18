@@ -707,6 +707,31 @@ function validasiDanKurangiStok(daftarItemPesanan) {
   return { sukses: true, detailItem: hasilItem };
 }
 
+/**
+ * Mengembalikan (restore) kuota stok porsi dan mengurangi terjualHariIni
+ * apabila pesanan dibatalkan / ditolak oleh Staf Dapur (Mencegah Fake Order / Spam).
+ * @param {Array<Object>} daftarItemPesanan
+ */
+function kembalikanStokPesananBatal(daftarItemPesanan) {
+  if (!Array.isArray(daftarItemPesanan)) return;
+
+  for (const item of daftarItemPesanan) {
+    const target = dataMenu.find((m) => m.id === Number(item.menuId));
+    const qty = Math.floor(Number(item.qty) || 0);
+    if (target && qty > 0) {
+      target.stok += qty;
+      target.terjualHariIni = Math.max(0, (target.terjualHariIni || 0) - qty);
+
+      if (isDbConnected) {
+        Menu.update(
+          { stok: target.stok, terjualHariIni: target.terjualHariIni },
+          { where: { id: target.id } }
+        ).catch(() => {});
+      }
+    }
+  }
+}
+
 module.exports = {
   Menu,
   initMenuTable,
@@ -731,5 +756,6 @@ module.exports = {
   toggleStatusHabis,
   updateKuotaStok,
   tambahMenuBaru,
-  validasiDanKurangiStok
+  validasiDanKurangiStok,
+  kembalikanStokPesananBatal
 };
