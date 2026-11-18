@@ -29,21 +29,21 @@
     </span>
   </div>
 
-  <!-- Header Info Meja Ringkas -->
-  <div class="bg-white rounded-2xl border border-stone-200/90 p-4 shadow-xs flex items-center justify-between gap-3">
-    <div class="flex items-center gap-3">
-      <span class="w-10 h-10 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center justify-center shrink-0">
+  <!-- Header Info Meja Ringkas & Responsif Mobile -->
+  <div class="bg-white rounded-2xl border border-stone-200/90 p-3.5 sm:p-4 shadow-xs flex items-center justify-between gap-2.5">
+    <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+      <span class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-stone-900 text-white font-bold text-xs sm:text-sm flex items-center justify-center shrink-0">
         <%= nomorMeja %>
       </span>
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-sm sm:text-base font-bold text-stone-900 leading-tight">
+      <div class="min-w-0">
+        <div class="flex items-center gap-1.5">
+          <h1 class="text-xs sm:text-base font-bold text-stone-900 leading-tight truncate">
             Meja <%= nomorMeja %> &middot; <%= namaPelangganAktif %>
           </h1>
-          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
         </div>
-        <p class="text-xs text-stone-500 mt-0.5">
-          Sentuh <strong>+ Tambah</strong> pada menu pilihan Anda
+        <p class="text-[11px] sm:text-xs text-stone-500 mt-0.5 truncate">
+          Pilih menu di bawah untuk mulai memesan
         </p>
       </div>
     </div>
@@ -52,48 +52,48 @@
     <a
       href="#section-keranjang-bawah"
       id="btn-scroll-keranjang"
-      class="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95"
+      class="shrink-0 px-3 sm:px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white text-[11px] sm:text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
     >
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="9" cy="21" r="1"></circle>
         <circle cx="20" cy="21" r="1"></circle>
         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
       </svg>
-      <span>Lihat Keranjang (<span id="badge-porsi-header">0</span>)</span>
+      <span>Keranjang (<span id="badge-porsi-header">0</span>)</span>
     </a>
   </div>
 
   <!-- SECTION 1: FILTER KATEGORI & PENCARIAN -->
-  <div class="bg-white rounded-2xl border border-stone-200/90 p-4 shadow-xs space-y-3">
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+  <div class="bg-white rounded-2xl border border-stone-200/90 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
       <!-- Input Cari -->
       <div class="relative flex-1">
         <input
           id="input-cari-menu"
           type="search"
-          placeholder="Cari makanan, kopi, camilan, atau rasa..."
-          class="w-full pl-9 pr-4 py-2 text-sm bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:outline-none focus:border-stone-900 transition-colors"
+          placeholder="Cari menu makanan atau minuman..."
+          class="w-full pl-9 pr-3.5 py-2 text-xs sm:text-sm bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:outline-none focus:border-stone-900 transition-colors"
         />
-        <svg class="w-4 h-4 text-stone-400 absolute left-3 top-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="w-4 h-4 text-stone-400 absolute left-3 top-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.3-4.3" />
         </svg>
       </div>
 
       <!-- Kategori Chips Horizontal -->
-      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
         <button
           type="button"
           data-kategori="Semua"
-          class="btn-filter-kategori shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors bg-stone-900 text-white border-stone-900"
+          class="btn-filter-kategori shrink-0 px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold border transition-colors bg-stone-900 text-white border-stone-900"
         >
-          Semua Menu
+          Semua
         </button>
         <% kategoriList.forEach(function(kat) { %>
           <button
             type="button"
             data-kategori="<%= kat %>"
-            class="btn-filter-kategori shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium border transition-colors bg-white text-stone-700 border-stone-200 hover:border-stone-900"
+            class="btn-filter-kategori shrink-0 px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-medium border transition-colors bg-white text-stone-700 border-stone-200 hover:border-stone-900"
           >
             <%= kat %>
           </button>
@@ -102,9 +102,9 @@
     </div>
   </div>
 
-  <!-- SECTION 2: GRID KARTU MENU MELEBAR KE SAMPING (3 SAMPAI 4 KOLOM DESKTOP) -->
+  <!-- SECTION 2: GRID KARTU MENU (2 Kolom Proporsional di HP seperti GoFood, 3-4 Kolom di Desktop) -->
   <section aria-label="Daftar Katalog Menu" class="space-y-4">
-    <div id="grid-menu-pelanggan" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+    <div id="grid-menu-pelanggan" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
       <% semuaMenu.forEach(function(item) { %>
         <article
           class="kartu-menu-item bg-white rounded-2xl border border-stone-200/90 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group <%= item.tersedia ? '' : 'opacity-70 bg-stone-50' %>"
@@ -113,8 +113,8 @@
           data-kategori="<%= item.kategori %>"
           data-stok="<%= item.stok %>"
         >
-          <!-- Gambar Menu -->
-          <div class="relative h-44 w-full bg-stone-100 overflow-hidden">
+          <!-- Gambar Menu Proporsional di HP & Desktop -->
+          <div class="relative h-32 sm:h-44 w-full bg-stone-100 overflow-hidden">
             <img
               src="<%= item.gambar %>"
               alt="<%= item.nama %>"
@@ -122,14 +122,14 @@
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'"
             />
-            <span class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-xs text-white text-[11px] font-medium">
+            <span class="hidden sm:inline-block absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-xs text-white text-[10px] font-medium">
               <%= item.kategori %>
             </span>
 
             <!-- Badge Status Stok -->
             <span
               id="badge-stok-menu-<%= item.id %>"
-              class="absolute top-2.5 right-2.5 text-[11px] font-bold px-2.5 py-1 rounded-lg border shadow-xs <%= item.stok === 0 ? 'bg-red-600 text-white border-red-700' : (item.stokMenipis ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-white text-stone-800 border-stone-200') %>"
+              class="absolute top-2 right-2 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border shadow-xs <%= item.stok === 0 ? 'bg-red-600 text-white border-red-700' : (item.stokMenipis ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-white/95 text-stone-800 border-stone-200') %>"
             >
               <% if (item.stok === 0) { %>
                 Habis
@@ -141,19 +141,22 @@
             </span>
           </div>
 
-          <!-- Konten Menu -->
-          <div class="p-4 flex-1 flex flex-col justify-between">
+          <!-- Konten Menu Rapi di Layar Sempit HP -->
+          <div class="p-3 sm:p-4 flex-1 flex flex-col justify-between">
             <div>
-              <h3 class="font-bold text-base text-stone-900 leading-snug">
+              <span class="sm:hidden text-[10px] font-medium text-stone-400 block mb-0.5 truncate">
+                <%= item.kategori %>
+              </span>
+              <h3 class="font-bold text-xs sm:text-base text-stone-900 leading-snug line-clamp-2">
                 <%= item.nama %>
               </h3>
-              <p class="text-xs text-stone-500 mt-1 leading-relaxed line-clamp-2">
+              <p class="hidden sm:block text-xs text-stone-500 mt-1 leading-relaxed line-clamp-2">
                 <%= item.deskripsi %>
               </p>
             </div>
 
-            <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
-              <span class="font-bold text-base text-stone-900">
+            <div class="mt-2.5 sm:mt-4 pt-2.5 sm:pt-3 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span class="font-extrabold text-xs sm:text-base text-stone-900">
                 <%= formatRupiah(item.harga) %>
               </span>
 
@@ -166,7 +169,7 @@
                   data-harga="<%= item.harga %>"
                   data-stok="<%= item.stok %>"
                   data-gambar="<%= item.gambar %>"
-                  class="px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                  class="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-[11px] sm:text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-2xs text-center"
                 >
                   + Tambah
                 </button>
@@ -175,9 +178,9 @@
                   type="button"
                   data-action="tanya-pengganti"
                   data-nama="<%= item.nama %>"
-                  class="px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-800 border border-red-200 text-xs font-semibold transition-colors cursor-pointer"
+                  class="w-full sm:w-auto px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-800 border border-red-200 text-[11px] sm:text-xs font-semibold transition-colors cursor-pointer text-center"
                 >
-                  Tanya Pengganti
+                  Pengganti
                 </button>
               <% } %>
             </div>
@@ -346,8 +349,8 @@
       class="flex-1 p-4 space-y-3 overflow-y-auto bg-stone-50 text-xs sm:text-sm"
     >
       <div class="flex items-start gap-2.5">
-        <span class="w-6 h-6 rounded-lg bg-stone-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-          DT
+        <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-700 to-stone-900 text-amber-100 text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+          ☕
         </span>
         <div class="bg-white border border-stone-200 rounded-2xl rounded-tl-sm p-3.5 text-stone-800 shadow-xs max-w-[90%] space-y-1">
           <p class="leading-relaxed">
@@ -503,7 +506,7 @@
 
     const nomorMejaAktif = '<%= nomorMeja %>';
     const namaPelangganAktif = '<%= namaPelangganAktif %>';
-    let tokoSedangBuka = <%= (typeof statusToko !== 'undefined' && !statusToko.sedangBuka) ? 'false' : 'true' %>;
+    let tokoSedangBuka = '<%= (typeof statusToko !== "undefined" && !statusToko.sedangBuka) ? "false" : "true" %>' === 'true';
     let pesanAlasanTutup = `<%= (typeof statusToko !== 'undefined') ? statusToko.alasan : '' %>`;
     let kategoriAktif = 'Semua';
     const keranjangMeja = new Map();
@@ -602,8 +605,8 @@
 
         wrapper.className = 'flex items-start gap-2.5';
         wrapper.innerHTML = `
-          <span class="w-6 h-6 rounded-lg bg-stone-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-            DT
+          <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-700 to-stone-900 text-amber-100 text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+            ☕
           </span>
           <div class="bg-white border border-stone-200 rounded-2xl rounded-tl-sm p-3 text-stone-800 shadow-xs max-w-[92%] space-y-1">
             <p class="leading-relaxed text-xs">${formatBoldMarkdown(teksUtama)}</p>
@@ -626,8 +629,8 @@
       loadingEl.id = 'chat-loading-indicator';
       loadingEl.className = 'flex items-start gap-2.5';
       loadingEl.innerHTML = `
-        <span class="w-6 h-6 rounded-lg bg-stone-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-          DT
+        <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-700 to-stone-900 text-amber-100 text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+          ☕
         </span>
         <div class="bg-stone-100 border border-stone-200 rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-stone-600 text-xs flex items-center gap-2">
           <span class="inline-block w-2 h-2 rounded-full bg-stone-500 animate-ping"></span>
@@ -956,6 +959,10 @@
         const data = await res.json();
         tutupModalKonfirmasi();
 
+        if (Array.isArray(data.semuaMenuTerbaru)) {
+          perbaruiStokKartuMenuDom(data.semuaMenuTerbaru);
+        }
+
         if (!res.ok || !data.sukses) {
           bukaAsisten();
           tambahPesanChat({
@@ -1055,11 +1062,68 @@
       });
     });
 
+    /**
+     * Memperbarui badge stok dan tombol "+ Tambah" vs "Pengganti" di semua kartu menu
+     * secara real-time setiap 3 detik tanpa perlu reload halaman.
+     */
+    function perbaruiStokKartuMenuDom(daftarMenu) {
+      if (!Array.isArray(daftarMenu)) return;
+
+      daftarMenu.forEach((m) => {
+        const kartu = document.querySelector(`.kartu-menu-item[data-id="${m.id}"]`);
+        const badge = document.getElementById(`badge-stok-menu-${m.id}`);
+        if (!kartu) return;
+
+        kartu.setAttribute('data-stok', m.stok);
+        const btnAksi = kartu.querySelector('button[data-action]');
+
+        if (m.stok === 0) {
+          kartu.classList.add('opacity-70', 'bg-stone-50');
+          if (badge) {
+            badge.className = 'absolute top-2 right-2 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border shadow-xs bg-red-600 text-white border-red-700';
+            badge.textContent = 'Habis';
+          }
+          if (btnAksi) {
+            btnAksi.setAttribute('data-action', 'tanya-pengganti');
+            btnAksi.setAttribute('data-nama', m.nama);
+            btnAksi.className = 'w-full sm:w-auto px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-800 border border-red-200 text-[11px] sm:text-xs font-semibold transition-colors cursor-pointer text-center';
+            btnAksi.textContent = 'Pengganti';
+          }
+        } else {
+          kartu.classList.remove('opacity-70', 'bg-stone-50');
+          if (badge) {
+            if (m.stok <= 5) {
+              badge.className = 'absolute top-2 right-2 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border shadow-xs bg-amber-100 text-amber-900 border-amber-300';
+              badge.textContent = `Sisa ${m.stok}`;
+            } else {
+              badge.className = 'absolute top-2 right-2 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border shadow-xs bg-white/95 text-stone-800 border-stone-200';
+              badge.textContent = 'Tersedia';
+            }
+          }
+          if (btnAksi) {
+            btnAksi.setAttribute('data-action', 'tambah-item');
+            btnAksi.setAttribute('data-id', m.id);
+            btnAksi.setAttribute('data-nama', m.nama);
+            btnAksi.setAttribute('data-harga', m.harga);
+            btnAksi.setAttribute('data-stok', m.stok);
+            btnAksi.setAttribute('data-gambar', m.gambar || '');
+            btnAksi.className = 'w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-[11px] sm:text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-2xs text-center';
+            btnAksi.textContent = '+ Tambah';
+          }
+        }
+      });
+    }
+
     setInterval(async () => {
       try {
         const res = await fetch('/api/sinkronisasi', { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
+
+        // Sinkronisasi Stok Kartu Menu Real-Time (Saat Staf Dapur klik Kunci Habis atau Pesanan Masuk)
+        if (Array.isArray(data.semuaMenu)) {
+          perbaruiStokKartuMenuDom(data.semuaMenu);
+        }
 
         // Sinkronisasi Status Buka/Tutup Toko Real-Time
         if (data.statusToko) {

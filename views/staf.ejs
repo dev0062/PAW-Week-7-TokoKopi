@@ -43,21 +43,21 @@
     </div>
 
     <!-- Tab Pilihan: [ Antrean Masak (KDS) ] vs [ Kelola Menu & Stok (CRUD) ] -->
-    <div class="flex items-center gap-2">
-      <div class="grid grid-cols-2 gap-1 bg-stone-100 p-1 rounded-xl text-xs font-bold">
+    <div class="w-full sm:w-auto">
+      <div class="grid grid-cols-2 gap-1 bg-stone-100 p-1 rounded-xl text-[11px] sm:text-xs font-bold w-full">
         <button
           type="button"
           id="tab-kds-antrean"
-          class="py-2 px-3.5 rounded-lg transition-all cursor-pointer bg-white text-stone-900 shadow-xs"
+          class="py-2 px-3 rounded-lg transition-all cursor-pointer bg-white text-stone-900 shadow-xs text-center"
         >
           Antrean (<span id="stat-antrean-aktif"><%= antreanAktif.length %></span>)
         </button>
         <button
           type="button"
           id="tab-kds-stok"
-          class="py-2 px-3.5 rounded-lg transition-all cursor-pointer text-stone-600 hover:text-stone-900"
+          class="py-2 px-3 rounded-lg transition-all cursor-pointer text-stone-600 hover:text-stone-900 text-center"
         >
-          Kelola Menu &amp; Stok (<span id="stat-total-menu"><%= semuaMenu.length %></span>)
+          Menu &amp; Stok (<span id="stat-total-menu"><%= semuaMenu.length %></span>)
         </button>
       </div>
     </div>

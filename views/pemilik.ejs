@@ -68,36 +68,36 @@
         >
           <%= statusToko.sedangBuka ? '🟢' : '🔴' %>
         </span>
-        <div>
-          <div class="flex items-center gap-2">
-            <h2 class="text-sm sm:text-base font-bold text-stone-900">
-              Status Operasional Kedai:
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <h2 class="text-xs sm:text-base font-bold text-stone-900">
+              Status Kedai:
               <span id="teks-status-toko" class="<%= statusToko.sedangBuka ? 'text-emerald-700' : 'text-red-600' %>">
                 <%= statusToko.sedangBuka ? 'SEDANG BUKA' : 'SEDANG TUTUP' %>
               </span>
             </h2>
-            <span id="pill-mode-toko" class="text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-stone-100 text-stone-700">
+            <span id="pill-mode-toko" class="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-md bg-stone-100 text-stone-700">
               Mode: <%= statusToko.modeOperasional %>
             </span>
-            <span id="badge-jam-server" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900">
-              Jam Server: <%= statusToko.jamSekarang %> WIB
+            <span id="badge-jam-server" class="text-[10px] sm:text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900">
+              Server: <%= statusToko.jamSekarang %> WIB
             </span>
           </div>
-          <p id="alasan-status-toko" class="text-xs text-stone-500 mt-0.5">
+          <p id="alasan-status-toko" class="text-[11px] sm:text-xs text-stone-500 mt-1 leading-relaxed">
             <%= statusToko.alasan %>
           </p>
         </div>
       </div>
 
-      <!-- Form Pengaturan Jam Buka/Tutup & Tombol Setel Tutup/Buka -->
-      <div class="flex flex-wrap items-end gap-2.5">
+      <!-- Form Pengaturan Jam Buka/Tutup & Tombol Setel Tutup/Buka (Rapi di HP & Desktop) -->
+      <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-2 w-full lg:w-auto">
         <div>
           <label class="block text-[10px] font-bold uppercase text-stone-500 mb-1">Jam Buka</label>
           <input
             type="time"
             id="input-jam-buka"
             value="<%= statusToko.jamBuka %>"
-            class="px-3 py-1.5 text-xs font-bold bg-stone-50 border border-stone-300 rounded-xl"
+            class="w-full px-3 py-1.5 text-xs font-bold bg-stone-50 border border-stone-300 rounded-xl"
           />
         </div>
         <div>
@@ -106,13 +106,13 @@
             type="time"
             id="input-jam-tutup"
             value="<%= statusToko.jamTutup %>"
-            class="px-3 py-1.5 text-xs font-bold bg-stone-50 border border-stone-300 rounded-xl"
+            class="w-full px-3 py-1.5 text-xs font-bold bg-stone-50 border border-stone-300 rounded-xl"
           />
         </div>
         <button
           type="button"
           id="btn-simpan-jam"
-          class="px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold cursor-pointer"
+          class="col-span-2 sm:col-span-1 px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold cursor-pointer text-center"
         >
           Set Jam (Auto)
         </button>
@@ -120,17 +120,17 @@
         <button
           type="button"
           id="btn-tutup-paksa"
-          class="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold cursor-pointer"
+          class="px-3 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[11px] sm:text-xs font-bold cursor-pointer text-center"
         >
-          🔒 Tutup Toko Sekarang
+          🔒 Tutup Toko
         </button>
 
         <button
           type="button"
           id="btn-buka-paksa"
-          class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
+          class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] sm:text-xs font-bold cursor-pointer text-center"
         >
-          🔓 Buka Toko Sekarang
+          🔓 Buka Toko
         </button>
       </div>
     </div>
@@ -408,6 +408,33 @@
         document.getElementById('kpi-total-porsi').innerHTML = `Dari total <strong>${totalPorsi} porsi</strong> makanan & minuman`;
         document.getElementById('kpi-stok-kritis').textContent = `${jumlahKritis} Menu Perlu Belanja`;
         document.getElementById('kpi-dicari-habis').textContent = `${totalDicari} Kali Ditanyakan`;
+
+        // Update Tabel Sisa Stok & Penjualan Harian secara Real-Time
+        const tbody = document.getElementById('tbody-laporan-pemilik');
+        if (tbody) {
+          tbody.innerHTML = peringkat.map((item) => {
+            const kritis = item.stok <= 5;
+            let badgeKondisi = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800">Aman</span>';
+            if (item.stok === 0) {
+              badgeKondisi = '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-600 text-white">Habis</span>';
+            } else if (kritis) {
+              badgeKondisi = '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-900">Menipis</span>';
+            }
+
+            return `
+              <tr class="hover:bg-stone-50/60 transition-colors">
+                <td class="py-3 px-3 font-bold text-stone-900">#${item.peringkat}</td>
+                <td class="py-3 px-3 font-bold text-stone-900">${item.nama}</td>
+                <td class="py-3 px-3 font-mono text-right">${formatRupiahClient(item.harga)}</td>
+                <td class="py-3 px-3 text-center text-stone-500">${item.stokAwal} porsi</td>
+                <td class="py-3 px-3 font-bold text-center text-stone-900">${item.terjualHariIni} porsi</td>
+                <td class="py-3 px-3 font-bold text-center ${kritis ? 'text-red-600' : 'text-emerald-700'}">${item.stok} porsi</td>
+                <td class="py-3 px-3 text-center">${badgeKondisi}</td>
+                <td class="py-3 px-3 font-bold text-right text-stone-900">${formatRupiahClient(item.omzetHariIni)}</td>
+              </tr>
+            `;
+          }).join('');
+        }
       } catch (e) {}
     }, 3000);
   })();
