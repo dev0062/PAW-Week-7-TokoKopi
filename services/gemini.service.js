@@ -23,6 +23,7 @@
  */
 
 const { geminiConfig, getGeminiClient } = require('../config/gemini');
+const appConfig = require('../config/appConfig');
 const menuModel = require('../models/menuModel');
 const orderModel = require('../models/orderModel');
 const { formatRupiah } = require('../utils/formatter');
@@ -109,10 +110,14 @@ async function requestGeminiCompletion({ message, nomorMeja, semuaMenu }) {
   }
 
   const { contextMenuText, infoPesananText } = buildDatabaseContext(semuaMenu, nomorMeja);
+  const statusToko = appConfig.getStatusToko();
   const systemInstruction = geminiConfig.getSystemInstruction(nomorMeja);
 
   const userPromptWithContext = `
 === DATA DATABASE REAL-TIME TOKO KOPI SIMPANAN ===
+STATUS OPERASIONAL TOKO SAAT INI:
+${statusToko.sedangBuka ? 'BUKA' : 'TUTUP'} (${statusToko.alasan})
+
 DAFTAR MENU & STOK SAAT INI:
 ${contextMenuText}
 
