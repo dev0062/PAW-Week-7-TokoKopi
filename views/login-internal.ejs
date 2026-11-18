@@ -35,29 +35,45 @@
     };
   </script>
 </head>
-<body class="bg-stone-100 text-stone-900 font-sans min-h-screen flex flex-col justify-between antialiased selection:bg-amber-800 selection:text-white">
+<body class="relative bg-stone-950 text-stone-900 font-sans min-h-screen flex flex-col justify-between antialiased selection:bg-amber-800 selection:text-white overflow-x-hidden">
 
-  <!-- Header Portal Internal -->
-  <header class="w-full max-w-4xl mx-auto px-5 pt-6 pb-2 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-stone-900 text-white flex items-center justify-center font-bold text-sm shadow-xs">
-        DT
+  <!-- Background Foto Barista & Mesin Espresso Toko Kopi Simpanan -->
+  <div class="fixed inset-0 -z-10">
+    <img
+      src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1920&q=85"
+      alt="Barista Toko Kopi Simpanan"
+      class="w-full h-full object-cover scale-105 filter brightness-[0.38] contrast-105"
+    />
+    <div class="absolute inset-0 bg-gradient-to-b from-stone-950/75 via-stone-950/50 to-stone-950/85"></div>
+  </div>
+
+  <!-- Header Portal Internal (Responsif Mobile) -->
+  <header class="w-full max-w-4xl mx-auto px-4 sm:px-5 pt-5 pb-2 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-600 to-stone-900 border border-amber-400/40 text-amber-100 flex items-center justify-center shadow-md shrink-0">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 8h1a4 4 0 1 1 0 8h-1"/>
+          <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
+          <line x1="6" y1="2" x2="6" y2="4"/>
+          <line x1="10" y1="2" x2="10" y2="4"/>
+          <line x1="14" y1="2" x2="14" y2="4"/>
+        </svg>
       </div>
-      <div>
-        <span class="font-bold text-base text-stone-900 block leading-none"><%= appConfig.appName %></span>
-        <span class="text-xs text-stone-500 block mt-1">Portal Operasional Dapur &amp; Manajemen</span>
+      <div class="min-w-0">
+        <span class="font-bold text-sm sm:text-base text-white block leading-tight truncate drop-shadow-xs"><%= appConfig.appName %></span>
+        <span class="text-[11px] sm:text-xs text-amber-200/90 block mt-0.5 truncate">Portal Dapur &amp; Manajemen</span>
       </div>
     </div>
-    <div>
-      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-200/80 text-stone-700 text-[11px] font-semibold">
-        🔒 Area Khusus Internal Resto
+    <div class="shrink-0">
+      <span class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-[10px] sm:text-[11px] font-semibold">
+        🔒 Internal<span class="hidden sm:inline"> Resto</span>
       </span>
     </div>
   </header>
 
   <!-- Konten Utama: Kartu Login Staf Dapur & Pemilik -->
-  <main class="flex-1 flex items-center justify-center px-4 py-6">
-    <div class="w-full max-w-md bg-white rounded-3xl border border-stone-200/90 p-6 sm:p-8 shadow-sm">
+  <main class="flex-1 flex items-center justify-center px-3.5 sm:px-4 py-4 sm:py-6">
+    <div class="w-full max-w-md bg-white/95 backdrop-blur-md rounded-3xl border border-white/20 p-5 sm:p-8 shadow-2xl">
 
       <div class="flex items-center justify-between gap-2 mb-3">
         <span class="inline-block text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-amber-100/80 text-amber-900">
@@ -169,7 +185,7 @@
   </main>
 
   <!-- Footer -->
-  <footer class="w-full max-w-4xl mx-auto px-5 py-4 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-400 gap-2">
+  <footer class="w-full max-w-4xl mx-auto px-5 py-4 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-300 gap-2">
     <span>&copy; 2026 <%= appConfig.appName %> (<%= appConfig.version %>)</span>
     <span><%= appConfig.authorName %> &middot; <%= appConfig.authorNim %></span>
   </footer>
